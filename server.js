@@ -1,7 +1,11 @@
 const axios = require("axios");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const crypto = require("crypto");
 const express = require("express");
+const passport = require("passport");
+const twitchStrategy = require("passport-twitch-new").Strategy;
 
 const cache = require("./cache.js");
 const consts = require("./consts.js");
@@ -15,60 +19,71 @@ const port = process.env.PORT || 3444;
 
 const notifications = new Map();
 
-function deduplicateNotification(id) {
-  if (notifications.has(id)) {
-    return false;
-  }
-  notifications.set(id, Date.now());
-  return true;
-}
+const channelScopes = [
+  "channel:read:redemptions",
+];
+
+const userScopes = [
+];
 
 app.use(bodyParser.json({
     verify: (req, res, buf) => { req.rawBody = buf }
 }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(express.static("public"));
+app.use(cookieParser());
+app.use(cookieSession({secret: process.env.COOKIE_SECRET}));
 
-app.get("/authenticate", (req, res) => {
-  const scopes = [
-    "channel:read:redemptions",
-  ];
-  const state = crypto.randomBytes(20).toString('hex');
-  const url = `https://id.twitch.tv/oauth2/authorize?client_id=${process.env.TWITCH_CLIENT_ID}&redirect_uri=${process.env.HOSTNAME}/twitch_callback&state=${state}&response_type=code&scope=${scopes.join("+")}`;
-  res.redirect(url);
+// register regenerate & save after the cookieSession middleware initialization
+app.use(function(request, response, next) {
+    if (request.session && !request.session.regenerate) {
+        request.session.regenerate = (cb) => {
+            cb();
+        };
+    }
+    if (request.session && !request.session.save) {
+        request.session.save = (cb) => {
+            cb();
+        };
+    }
+    next();
 });
 
-app.get("/twitch_callback", async (req, res) => {
-  try {
-    const authResponse = await axios.post(consts.AUTH_URL, null, {params: {
-      client_id: process.env.TWITCH_CLIENT_ID,
-      client_secret: process.env.TWITCH_CLIENT_SECRET,
-      code: req.query.code,
-      grant_type: "authorization_code",
-      redirect_uri: process.env.HOSTNAME + "/twitch_callback",
-    }});
+app.use(passport.initialize());
 
-    const access_token = authResponse.data.access_token;
-    const refresh_token = authResponse.data.refresh_token;
+app.use(express.static("public"));
 
-    const token = await twitch_api.validateToken(access_token);
-    if (!token) {
-      res.send("Error");
-      return;
-    }
-    const userId = token.user_id;
-
-    const [channel, created] = await models.Channel.findOrCreate({where: {twitch_id: userId}});
-    channel.access_token = access_token;
-    channel.refresh_token = refresh_token;
+passport.use(new twitchStrategy({
+    clientID: process.env.TWITCH_CLIENT_ID,
+    clientSecret: process.env.TWITCH_CLIENT_SECRET,
+    callbackURL: process.env.HOSTNAME + "/twitch_callback",
+    scope: userScopes.join("+"),
+  },
+  async function(accessToken, refreshToken, profile, done) {
+    const [channel, created] = await models.Channel.findOrCreate({where: {twitch_id: profile.id}});
+    channel.access_token = accessToken;
+    channel.refresh_token = refreshToken;
     channel.save();
+    return done(null, channel);
+  }));
 
-    res.send(`Successfully authenticated as ${token.login}`);
-  } catch (err) {
-    util.logAxiosError(err);
-    res.send("Error");
-  }
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
+
+app.get("/", (req, res) => {
+  console.log(req.session);
+  res.send("Hello");
+});
+
+app.get("/authenticate", passport.authenticate("twitch", { scope: channelScopes.join("+") }));
+app.get("/twitch_callback", passport.authenticate("twitch", { failureRedirect: "/" }), (req, res) => {
+  res.redirect("/");
+  // res.send(`Successfully authenticated as ${req.session.user.displayName}`);
 });
 
 app.post("/redeem", async (req, res) => {
@@ -116,3 +131,12 @@ function redemptionReceived(event) {
   console.log("User Name: " + event.user_name);
   console.log("Redemption: " + event.reward.title);
 }
+
+function deduplicateNotification(id) {
+  if (notifications.has(id)) {
+    return false;
+  }
+  notifications.set(id, Date.now());
+  return true;
+}
+
