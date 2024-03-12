@@ -4,7 +4,11 @@ const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
 const crypto = require("crypto");
 const express = require("express");
+const multer = require("multer");
+const fs = require("node:fs/promises");
+const os = require("os");
 const passport = require("passport");
+const s3 = require("@aws-sdk/client-s3");
 const twitchStrategy = require("passport-twitch-new").Strategy;
 
 const cache = require("./cache.js");
@@ -16,6 +20,9 @@ const util = require("./util.js");
 
 const app = express();
 const port = process.env.PORT || 3444;
+const upload = multer({ dest: os.tempdir });
+
+const s3client = new s3.S3Client({ region: process.env.S3_REGION });
 
 const notifications = new Map();
 
@@ -77,7 +84,7 @@ passport.deserializeUser((user, done) => {
 });
 
 app.get("/", (req, res) => {
-  if (req.session.passport.user) {
+  if (req.session.passport?.user) {
     res.send("Hello " + req.session.passport.user.twitch_display_name);
   } else {
     res.send("Unauthenticated");
@@ -87,7 +94,28 @@ app.get("/", (req, res) => {
 app.get("/authenticate", passport.authenticate("twitch", { scope: channelScopes.join("+") }));
 app.get("/twitch_callback", passport.authenticate("twitch", { failureRedirect: "/" }), (req, res) => {
   res.redirect("/");
-  // res.send(`Successfully authenticated as ${req.session.user.displayName}`);
+});
+
+app.post("/upload", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    res.send("No file");
+    return;
+  }
+
+  const shasum = crypto.createHash("sha1");
+  shasum.update(req.file.buffer);
+  const hash = shasum.digest("hex");
+
+  const s3params = {
+    Body: req.file.buffer,
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: hash + ".png",
+  };
+
+  const command = new s3.PutObjectCommand(s3params);
+  const response = await s3client.send(command);
+  console.log(response);
+  res.send(hash);
 });
 
 app.post("/redeem", async (req, res) => {
