@@ -3,7 +3,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class Channel extends Model {
+  class User extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -13,13 +13,15 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
     }
   }
-  Channel.init({
+  User.init({
     twitch_id: DataTypes.STRING,
+    twitch_display_name: DataTypes.STRING,
     access_token: DataTypes.STRING,
     refresh_token: DataTypes.STRING,
+    zora_host: DataTypes.BOOLEAN,
   }, {
     sequelize,
-    modelName: 'Channel',
+    modelName: 'User',
   });
-  return Channel;
+  return User;
 };

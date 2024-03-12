@@ -57,23 +57,23 @@ exports.validateToken = async function(token) {
 };
 
 exports.validateUserToken = async function(userId) {
-  const channel = await models.Channel.findOne({where: {twitch_id: userId}});
+  const user = await models.User.findOne({where: {twitch_id: userId}});
 
-  if (await exports.validateToken(channel.access_token)) {
-    return channel.access_token;
+  if (await exports.validateToken(user.access_token)) {
+    return user.access_token;
   }
 
-  const refresh = await exports.refreshToken(channel.refresh_token);
+  const refresh = await exports.refreshToken(user.refresh_token);
   if (!refresh) {
     return null;
   }
 
-  channel.access_token = refresh.access_token;
-  channel.refresh_token = refresh.refresh_token;
-  channel.save();
+  user.access_token = refresh.access_token;
+  user.refresh_token = refresh.refresh_token;
+  user.save();
 
-  if (await exports.validateToken(channel.access_token)) {
-    return channel.access_token;
+  if (await exports.validateToken(user.access_token)) {
+    return user.access_token;
   }
 
   return null;
@@ -148,8 +148,6 @@ exports.verifyRedeemWebhook = async function(userId) {
     return false;
   }
 
-  const channel = await models.Channel.findOne({where: {twitch_id: userId}});
-
   const eventSubs = await exports.getEventSubs(userId);
 
   if (eventSubs) {
@@ -159,11 +157,6 @@ exports.verifyRedeemWebhook = async function(userId) {
         return true;
       }
     }
-  }
-
-  if (!channel.redeem_secret) {
-    channel.redeem_secret = crypto.randomBytes(20).toString('hex');
-    channel.save();
   }
 
   return await exports.createEventSubWebhook(userId, consts.CHANNEL_POINT_REDEEM, 1, "/redeem");

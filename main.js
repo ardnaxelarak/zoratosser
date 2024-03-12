@@ -5,12 +5,14 @@ const server = require("./server.js");
 const twitch_api = require("./twitch_api.js");
 
 async function main() {
-  const channels = await models.Channel.findAll();
-  for (const channel of channels) {
-    if (await twitch_api.verifyRedeemWebhook(channel.twitch_id)) {
-      console.log(`${channel.twitch_id} Webhook: true`);
-    } else {
-      console.log(`${channel.twitch_id} Webhook: false`);
+  const users = await models.User.findAll();
+  for (const user of users) {
+    if (user.zora_host) {
+      if (await twitch_api.verifyRedeemWebhook(user.twitch_id)) {
+        console.log(`${user.twitch_display_name} Webhook: true`);
+      } else {
+        console.log(`${user.twitch_display_name} Webhook: false`);
+      }
     }
   }
 }

@@ -60,11 +60,12 @@ passport.use(new twitchStrategy({
     scope: userScopes.join("+"),
   },
   async function(accessToken, refreshToken, profile, done) {
-    const [channel, created] = await models.Channel.findOrCreate({where: {twitch_id: profile.id}});
-    channel.access_token = accessToken;
-    channel.refresh_token = refreshToken;
-    channel.save();
-    return done(null, channel);
+    const [user, created] = await models.User.findOrCreate({where: {twitch_id: profile.id}});
+    user.twitch_display_name = profile.display_name;
+    user.access_token = accessToken;
+    user.refresh_token = refreshToken;
+    user.save();
+    return done(null, user);
   }));
 
 passport.serializeUser((user, done) => {
@@ -76,8 +77,11 @@ passport.deserializeUser((user, done) => {
 });
 
 app.get("/", (req, res) => {
-  console.log(req.session);
-  res.send("Hello");
+  if (req.session.passport.user) {
+    res.send("Hello " + req.session.passport.user.twitch_display_name);
+  } else {
+    res.send("Unauthenticated");
+  }
 });
 
 app.get("/authenticate", passport.authenticate("twitch", { scope: channelScopes.join("+") }));
