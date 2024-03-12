@@ -3,14 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.addIndex("Users", {
-      name: "users_twitch_id",
-      fields: ["twitch_id"],
+    await queryInterface.addIndex("Images", {
+      name: "images_twitch_id_name",
+      fields: ["channel_twitch_id", "name"],
       unique: true,
     });
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.removeIndex("Users", "users_twitch_id");
+    await queryInterface.removeIndex("Images", "images_twitch_id_name");
   }
 };

@@ -33,6 +33,8 @@ const channelScopes = [
 const userScopes = [
 ];
 
+app.set("view engine", "ejs");
+
 app.use(bodyParser.json({
     verify: (req, res, buf) => { req.rawBody = buf }
 }));
@@ -96,10 +98,19 @@ app.get("/twitch_callback", passport.authenticate("twitch", { failureRedirect: "
   res.redirect("/");
 });
 
-app.post("/upload", upload.single("file"), async (req, res) => {
+app.get("/add_image", (req, res) => {
+  res.render("add_image.html.ejs");
+});
+
+app.post("/upload_image", upload.single("image"), async (req, res) => {
+  if (!req.session.passport) {
+    return res.send("Unauthenticated");
+  }
   if (!req.file) {
-    res.send("No file");
-    return;
+    return res.send("No file");
+  }
+  if (!req.body.name) {
+    return res.send("No name");
   }
 
   const shasum = crypto.createHash("sha1");
@@ -114,7 +125,11 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
   const command = new s3.PutObjectCommand(s3params);
   const response = await s3client.send(command);
-  console.log(response);
+
+  const url = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${s3params.Key}`;
+  const channelId = req.session.passport?.user?.twitch_id;
+  const image = await models.Image.create({channel_twitch_id: channelId, name: req.body.name, url: url});
+
   res.send(hash);
 });
 
