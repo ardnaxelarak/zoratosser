@@ -57,7 +57,7 @@ exports.validateToken = async function(token) {
 };
 
 exports.validateUserToken = async function(userId) {
-  const user = await models.User.findOne({where: {twitch_id: userId}});
+  const user = await models.user.findOne({where: {twitch_id: userId}});
 
   if (await exports.validateToken(user.access_token)) {
     return user.access_token;

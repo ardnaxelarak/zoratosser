@@ -3,28 +3,33 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('images', {
+    await queryInterface.createTable('item_weights', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      channel_twitch_id: {
+      item_id: {
         allowNull: false,
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
       },
-      name: {
-        allowNull: false,
-        type: Sequelize.STRING,
+      set_id: {
+        allowNull: true,
+        type: Sequelize.INTEGER,
       },
-      url: {
+      weight: {
         allowNull: false,
-        type: Sequelize.STRING,
+        type: Sequelize.DOUBLE,
+      },
+      max_quantity: {
+        allowNull: false,
+        defaultValue: 0,
+        type: Sequelize.INTEGER,
       },
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('images');
+    await queryInterface.dropTable('item_weights');
   }
 };

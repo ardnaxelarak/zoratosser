@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('images', {
+    await queryInterface.createTable('sets', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -18,13 +18,12 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING,
       },
-      url: {
-        allowNull: false,
+      redeem_name: {
         type: Sequelize.STRING,
       },
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('images');
+    await queryInterface.dropTable('sets');
   }
 };

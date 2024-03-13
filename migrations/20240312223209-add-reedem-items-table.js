@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('images', {
+    await queryInterface.createTable('items', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -18,13 +18,26 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING,
       },
-      url: {
+      image_id: {
         allowNull: false,
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
+      },
+      single_id: {
+        allowNull: true,
+        type: Sequelize.INTEGER,
+      },
+      single_quantity: {
+        allowNull: true,
+        type: Sequelize.INTEGER,
+      },
+      weigh_by_remainder: {
+        allowNull: false,
+        defaultValue: true,
+        type: Sequelize.BOOLEAN,
       },
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('images');
+    await queryInterface.dropTable('items');
   }
 };

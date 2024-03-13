@@ -1,11 +1,13 @@
-'use strict';
+"use strict";
 const {
   Model
-} = require('sequelize');
+} = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
-      User.hasMany(models.Image);
+      User.hasMany(models.image, { as: "images", sourceKey: "twitch_id", foreignKey: "channel_twitch_id"});
+      User.hasMany(models.set, { as: "sets", sourceKey: "twitch_id", foreignKey: "channel_twitch_id"});
+      User.hasMany(models.item, { as: "items", sourceKey: "twitch_id", foreignKey: "channel_twitch_id"});
     }
   }
   User.init({
@@ -16,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
     zora_host: DataTypes.BOOLEAN,
   }, {
     sequelize,
-    modelName: 'User',
+    modelName: "user",
   });
   return User;
 };

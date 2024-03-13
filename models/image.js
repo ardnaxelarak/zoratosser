@@ -1,11 +1,11 @@
-'use strict';
+"use strict";
 const {
   Model
-} = require('sequelize');
+} = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class Image extends Model {
     static associate(models) {
-      Image.belongsTo(models.User, { as: "Channel", foreign_key: "channel_twitch_id" });
+      Image.belongsTo(models.user, { as: "channel", foreign_key: "channel_twitch_id", target_key: "twitch_id" });
     }
   }
   Image.init({
@@ -14,8 +14,7 @@ module.exports = (sequelize, DataTypes) => {
     url: DataTypes.STRING,
   }, {
     sequelize,
-    modelName: 'Image',
+    modelName: "image",
   });
   return Image;
 };
-

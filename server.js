@@ -69,7 +69,7 @@ passport.use(new twitchStrategy({
     scope: userScopes.join("+"),
   },
   async function(accessToken, refreshToken, profile, done) {
-    const [user, created] = await models.User.findOrCreate({where: {twitch_id: profile.id}});
+    const [user, created] = await models.user.findOrCreate({where: {twitch_id: profile.id}});
     user.twitch_display_name = profile.display_name;
     user.access_token = accessToken;
     user.refresh_token = refreshToken;
@@ -128,7 +128,7 @@ app.post("/upload_image", upload.single("image"), async (req, res) => {
 
   const url = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${s3params.Key}`;
   const channelId = req.session.passport?.user?.twitch_id;
-  const image = await models.Image.create({channel_twitch_id: channelId, name: req.body.name, url: url});
+  const image = await models.image.create({channel_twitch_id: channelId, name: req.body.name, url: url});
 
   res.send(hash);
 });

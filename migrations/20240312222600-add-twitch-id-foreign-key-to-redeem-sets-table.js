@@ -3,8 +3,8 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.addConstraint("images", {
-      name: "images_fkey_twitch_id",
+    await queryInterface.addConstraint("sets", {
+      name: "sets_fkey_twitch_id",
       type: "foreign key",
       fields: ["channel_twitch_id"],
       references: {
@@ -15,6 +15,6 @@ module.exports = {
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.removeConstraint("images", "images_fkey_twitch_id");
+    await queryInterface.removeConstraint("sets", "sets_fkey_twitch_id");
   }
 };
