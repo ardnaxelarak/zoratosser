@@ -4,6 +4,7 @@ const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
 const crypto = require("crypto");
 const express = require("express");
+const history = require("connect-history-api-fallback");
 const passport = require("passport");
 const twitchStrategy = require("passport-twitch-new").Strategy;
 
@@ -53,8 +54,6 @@ app.use(function(request, response, next) {
 
 app.use(passport.initialize());
 
-app.use(express.static("public"));
-
 passport.use(new twitchStrategy({
     clientID: process.env.TWITCH_CLIENT_ID,
     clientSecret: process.env.TWITCH_CLIENT_SECRET,
@@ -80,14 +79,6 @@ passport.deserializeUser((user, done) => {
 
 app.use("/api", api);
 
-app.get("/", (req, res) => {
-  if (req.session.passport?.user) {
-    res.send("Hello " + req.session.passport.user.twitch_display_name);
-  } else {
-    res.send("Unauthenticated");
-  }
-});
-
 app.get("/authenticate", passport.authenticate("twitch", { scope: channelScopes.join("+") }));
 app.get("/twitch_callback", passport.authenticate("twitch", { failureRedirect: "/" }), (req, res) => {
   res.redirect("/");
@@ -95,10 +86,6 @@ app.get("/twitch_callback", passport.authenticate("twitch", { failureRedirect: "
 
 app.get("/add_image", (req, res) => {
   res.render("add_image.html.ejs");
-});
-
-app.get("/myzora/edit", (req, res) => {
-  res.render("editmyzora.html.ejs");
 });
 
 app.post("/redeem", async (req, res) => {
@@ -135,6 +122,9 @@ app.post("/redeem", async (req, res) => {
 
   res.sendStatus(200);
 });
+
+app.use(history());
+app.use(express.static("dist"));
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
