@@ -5,6 +5,16 @@ const {
 module.exports = (sequelize, DataTypes) => {
   class ItemWeight extends Model {
     static associate(models) {
+      ItemWeight.belongsTo(models.set, { as: "set", foreignKey: "set_id", targetKey: "id" });
+      ItemWeight.belongsTo(models.item, { as: "item", foreignKey: "item_id", targetKey: "id" });
+    }
+    sanitize() {
+      return {
+        set: this.set.name,
+        item: this.item.name,
+        weight: this.weight,
+        max_quantity: this.max_quantity,
+      };
     }
   }
   ItemWeight.init({

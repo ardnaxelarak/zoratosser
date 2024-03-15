@@ -8,6 +8,7 @@ async function main() {
   const users = await models.user.findAll();
   for (const user of users) {
     if (user.zora_host) {
+      /*
       const sets = await models.set.findAll({ where: { channel_twitch_id: user.twitch_id } });
       for (const set of sets) {
         console.log(set.name);
@@ -16,6 +17,7 @@ async function main() {
           console.log(item.item_weight);
         }
       }
+      */
       if (await twitch_api.verifyRedeemWebhook(user.twitch_id)) {
         console.log(`${user.twitch_display_name} Webhook: true`);
       } else {

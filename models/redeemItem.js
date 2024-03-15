@@ -9,6 +9,16 @@ module.exports = (sequelize, DataTypes) => {
       RedeemItem.belongsTo(models.image, { as: "image", foreignKey: "image_id" });
       RedeemItem.belongsTo(models.item, { as: "single_item", foreignKey: "single_id" });
     }
+    sanitize() {
+      return {
+        id: this.id,
+        name: this.name,
+        image_id: this.image_id,
+        single_id: this.single_id,
+        single_quantity: this.single_quantity,
+        weigh_by_remainder: this.weigh_by_remainder,
+      };
+    }
   }
   RedeemItem.init({
     channel_twitch_id: DataTypes.STRING,

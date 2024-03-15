@@ -4,25 +4,18 @@ const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
 const crypto = require("crypto");
 const express = require("express");
-const multer = require("multer");
-const fs = require("node:fs/promises");
-const os = require("os");
 const passport = require("passport");
-const s3 = require("@aws-sdk/client-s3");
 const twitchStrategy = require("passport-twitch-new").Strategy;
 
+const api = require("./api.js");
 const cache = require("./cache.js");
 const consts = require("./consts.js");
-const database = require("./database.js");
 const models = require("./models");
 const twitch_api = require("./twitch_api.js");
 const util = require("./util.js");
 
 const app = express();
 const port = process.env.PORT || 3444;
-const upload = multer({ dest: os.tempdir });
-
-const s3client = new s3.S3Client({ region: process.env.S3_REGION });
 
 const notifications = new Map();
 
@@ -85,6 +78,8 @@ passport.deserializeUser((user, done) => {
   done(null, user);
 });
 
+app.use("/api", api);
+
 app.get("/", (req, res) => {
   if (req.session.passport?.user) {
     res.send("Hello " + req.session.passport.user.twitch_display_name);
@@ -102,35 +97,8 @@ app.get("/add_image", (req, res) => {
   res.render("add_image.html.ejs");
 });
 
-app.post("/upload_image", upload.single("image"), async (req, res) => {
-  if (!req.session.passport) {
-    return res.send("Unauthenticated");
-  }
-  if (!req.file) {
-    return res.send("No file");
-  }
-  if (!req.body.name) {
-    return res.send("No name");
-  }
-
-  const shasum = crypto.createHash("sha1");
-  shasum.update(req.file.buffer);
-  const hash = shasum.digest("hex");
-
-  const s3params = {
-    Body: req.file.buffer,
-    Bucket: process.env.S3_BUCKET_NAME,
-    Key: hash + ".png",
-  };
-
-  const command = new s3.PutObjectCommand(s3params);
-  const response = await s3client.send(command);
-
-  const url = `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${s3params.Key}`;
-  const channelId = req.session.passport?.user?.twitch_id;
-  const image = await models.image.create({channel_twitch_id: channelId, name: req.body.name, url: url});
-
-  res.send(hash);
+app.get("/myzora/edit", (req, res) => {
+  res.render("editmyzora.html.ejs");
 });
 
 app.post("/redeem", async (req, res) => {

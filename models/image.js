@@ -5,7 +5,15 @@ const {
 module.exports = (sequelize, DataTypes) => {
   class Image extends Model {
     static associate(models) {
-      Image.belongsTo(models.user, { as: "channel", foreign_key: "channel_twitch_id", target_key: "twitch_id" });
+      Image.belongsTo(models.user, { as: "channel", foreignKey: "channel_twitch_id", targetKey: "twitch_id" });
+    }
+    sanitize() {
+      return {
+        id: this.id,
+        name: this.name,
+        generic: this.channel_twitch_id == null,
+        url: this.url,
+      };
     }
   }
   Image.init({
