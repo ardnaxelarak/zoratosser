@@ -17,6 +17,7 @@
           <th scope="col" class="wbr-col text-center align-bottom">Weigh by<br>Remainder</th>
           <th scope="col" class="text-end align-bottom">Set:</th>
           <th scope="col" class="weight-col text-center align-bottom" v-for="set in sets">{{ set.name }}</th>
+          <th scope="col"></th>
         </tr>
         <template v-for="item in items">
           <tr>
@@ -26,6 +27,9 @@
             <td class="text-end no-bottom-border">Weight:</td>
             <td class="text-center align-bottom no-bottom-border" v-for="set in sets">
               <input type="number" class="weight-input form-control form-control-sm" min="0.01" step="any" value="1" />
+            </td>
+            <td rowspan="2" class="row-management">
+              <button type="button" class="btn btn-primary"><i class="bi bi-pencil-fill"></i></button>
             </td>
           </tr>
           <tr>
