@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "vite build",
+    "watch": "NODE_ENV=development vite build --watch --mode=dev",
     "start": "node main.js"
   },
   "author": "",
@@ -20,6 +21,7 @@
     "cookie-session": "^2.1.0",
     "ejs": "^3.1.9",
     "express": "^4.18.3",
+    "immutable-sort": "^0.1.0",
     "multer": "^1.4.5-lts.1",
     "mysql": "^2.18.1",
     "mysql2": "^3.9.2",

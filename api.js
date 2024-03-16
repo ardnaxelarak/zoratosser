@@ -136,7 +136,7 @@ router.route("/items")
   .get(async (req, res) => {
     const user = req.session.passport.user;
 
-    const itemList = await models.item.findAll({where: {channel_twitch_id: user.twitch_id}, include: "image"});
+    const itemList = await models.item.findAll({where: {channel_twitch_id: user.twitch_id}, include: ["image", "sets"]});
 
     res.send(itemList.map(m => m.sanitize()));
   })

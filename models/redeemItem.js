@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
       RedeemItem.belongsTo(models.user, { as: "channel", foreignKey: "channel_twitch_id", sourceKey: "twitch_id" });
       RedeemItem.belongsTo(models.image, { as: "image", foreignKey: "image_id" });
       RedeemItem.belongsTo(models.item, { as: "single_item", foreignKey: "single_id" });
+      RedeemItem.belongsToMany(models.set, { as: "sets", through: models.item_weight, foreignKey: "item_id", otherKey: "set_id" });
     }
     sanitize() {
       return {
@@ -18,7 +19,21 @@ module.exports = (sequelize, DataTypes) => {
         single_id: this.single_id,
         single_quantity: this.single_quantity,
         weigh_by_remainder: this.weigh_by_remainder,
+        sets: this.getSets(),
       };
+    }
+    getSets() {
+      if (!this.sets) {
+        return null;
+      }
+
+      return this.sets.reduce((map, obj) => {
+        map[obj.name] = {
+          weight: obj.item_weight.weight,
+          max_quantity: obj.item_weight.max_quantity,
+        };
+        return map;
+      }, {});
     }
   }
   RedeemItem.init({
