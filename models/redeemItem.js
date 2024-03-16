@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
         id: this.id,
         name: this.name,
         image_id: this.image_id,
+        image_url: this.image.url,
         single_id: this.single_id,
         single_quantity: this.single_quantity,
         weigh_by_remainder: this.weigh_by_remainder,

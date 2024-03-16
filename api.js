@@ -115,8 +115,8 @@ router.route("/sets/:set_name/items/:item_name")
         max_quantity: 0,
       },
       include: [
-        models.item,
-        models.set,
+        "item",
+        "set",
       ],
     });
 
@@ -136,7 +136,7 @@ router.route("/items")
   .get(async (req, res) => {
     const user = req.session.passport.user;
 
-    const itemList = await models.item.findAll({where: {channel_twitch_id: user.twitch_id}});
+    const itemList = await models.item.findAll({where: {channel_twitch_id: user.twitch_id}, include: "image"});
 
     res.send(itemList.map(m => m.sanitize()));
   })
