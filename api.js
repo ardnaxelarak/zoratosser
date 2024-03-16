@@ -174,6 +174,104 @@ router.route("/items")
     res.send(item.sanitize());
   })
 
+router.route("/items/:name")
+  .put(requireFields("image_id", "name"), async (req, res) => {
+    const channelId = req.session.passport.user.twitch_id;
+
+    const item = await models.item.findOne({where: {channel_twitch_id: channelId, name: req.params.name}, include: ["image", "weights"]});
+    if (!item) {
+      return res.sendStatus(404);
+    }
+
+    const image = await models.image.findOne({where: {id: req.body.image_id}});
+
+    if (!image || (image.channel_twitch_id && image.channel_twitch_id != channelId)) {
+      res.status(400);
+      return res.send({error: "image_id not found"});
+    }
+
+    if (req.body.single_id) {
+      const single = await models.item.findOne({where: {id: req.body.single_id}});
+      if (!single || single.channel_twitch_id != channelId) {
+        return res.send({error: "single_id not found"});
+      }
+      if (!req.body.single_quantity) {
+        return res.send({error: "single_quantity must be present if single_id is present"});
+      }
+      if (!(req.body.single_quantity > 0)) {
+        return res.send({error: "single_quantity must be positive"});
+      }
+    }
+
+    item.set({
+      name: req.body.name,
+      image_id: req.body.image_id,
+      single_id: req.body.single_id,
+      single_quantity: req.body.single_quantity,
+      weigh_by_remainder: req.body.weigh_by_remainder,
+    });
+
+    const setList = await models.set.findAll({where: {channel_twitch_id: channelId}});
+    const setMap = setList.reduce((map, obj) => {
+      map[obj.name] = obj.id;
+      return map;
+    }, {});
+
+    const newWeights = {};
+    if (req.body.sets) {
+      for (const setName of Object.keys(req.body.sets)) {
+        const setWeight = req.body.sets[setName];
+
+        const setId = setMap[setName];
+        if (!setId) {
+          res.status(400);
+          return res.send({error: `set ${setName} not found`});
+        }
+
+        const [itemWeight, created] = await models.item_weight.findOrCreate({
+          where: {
+            set_id: setId,
+            item_id: item.id,
+          },
+        });
+
+        itemWeight.set({
+          weight: setWeight.weight || 0,
+          max_quantity: setWeight.max_quantity || 0,
+        });
+
+        newWeights[setId] = itemWeight;
+      }
+    }
+
+    const t = await models.sequelize.transaction();
+    try {
+      await item.save();
+
+      for (const oldWeight of item.weights) {
+        if (!newWeights[oldWeight.id]) {
+          await oldWeight.update({
+            weight: 0,
+            max_quantity: 0,
+          });
+        }
+      }
+
+      for (const newWeight of Object.values(newWeights)) {
+        await newWeight.save();
+      }
+
+      await t.commit();
+    } catch (err) {
+      console.log(err);
+      await t.rollback();
+      res.sendStatus(500);
+    }
+
+    await item.reload({include: ["image", "sets"]});
+    res.send(item.sanitize());
+  })
+
 router.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500);

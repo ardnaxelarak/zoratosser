@@ -24,12 +24,12 @@
             <tr>
               <td rowspan="2" class="text-center"><img class="item-icon" :src="item.image_url"></td>
               <td rowspan="2" class="item-name">
-                <input type="text" class="form-control form-control-sm" :value="item.edit.name" />
+                <input type="text" class="form-control form-control-sm" v-model="item.edit.name" />
               </td>
-              <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" :value="item.edit.weigh_by_remainder"></td>
+              <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="item.edit.weigh_by_remainder"></td>
               <td class="text-end no-bottom-border">Weight:</td>
               <td class="text-center align-bottom no-bottom-border" v-for="set in sets">
-                <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" value="1" />
+                <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" v-model="item.edit.sets[set.name].weight" />
               </td>
               <td rowspan="2" class="row-management">
                 <button type="button" class="btn btn-success" :data-item="item.name" @click="save_item">
@@ -43,7 +43,7 @@
             <tr>
               <td class="text-end">Max:</td>
               <td class="text-center align-bottom" v-for="set in sets">
-                <input type="number" class="max-input form-control form-control-sm" min="0" value="0" />
+                <input type="number" class="max-input form-control form-control-sm" min="0" v-model="item.edit.sets[set.name].max_quantity" />
               </td>
             </tr>
           </template>
@@ -51,7 +51,7 @@
             <tr>
               <td rowspan="2" class="text-center"><img class="item-icon" :src="item.image_url"></td>
               <td rowspan="2" class="item-name">{{ item.name }}</td>
-              <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" :value="item.weigh_by_remainder" disabled></td>
+              <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="item.weigh_by_remainder" disabled></td>
               <td class="text-end no-bottom-border">Weight:</td>
               <td class="text-center align-bottom no-bottom-border" v-for="set in sets">
                 {{ item.sets[set.name]?.weight || 0 }}
@@ -109,7 +109,6 @@ export default defineComponent({
     },
   },
   async created() {
-    console.log(process.env.NODE_ENV);
     axios.get("/api/sets").then(response => this.sets = response.data);
     axios.get("/api/items").then(response => this.items = response.data);
   },
@@ -121,18 +120,42 @@ export default defineComponent({
       }
 
       item.edit = JSON.parse(JSON.stringify(item));
+      for (const set of this.sets) {
+        if (!item.edit.sets[set.name]) {
+          item.edit.sets[set.name] = { weight: 0, max_quantity: 0 };
+        }
+      }
+
       item.editing = true;
     },
-    save_item(event) {
+    async save_item(event) {
       const item = this.itemMap[event.target.dataset.item];
       if (!item) {
         return;
       }
 
-      // TODO: actually call the API
+      const requestItem = {
+        image_id: item.edit.image_id,
+        name: item.edit.name,
+        single_id: item.edit.single_id,
+        single_quantity: item.edit.single_quantity,
+        weigh_by_remainder: item.edit.weigh_by_remainder,
+        sets: item.edit.sets,
+      };
 
-      item.edit = null;
-      item.editing = false;
+      try {
+        const response = await axios.put(`/api/items/${item.name}`, requestItem);
+
+        const newItem = response.data;
+        for (const key of Object.keys(newItem)) {
+          item[key] = JSON.parse(JSON.stringify(newItem[key]));
+        }
+
+        item.edit = null;
+        item.editing = false;
+      } catch (err) {
+        console.log(err);
+      }
     },
     cancel_item(event) {
       const item = this.itemMap[event.target.dataset.item];

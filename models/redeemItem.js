@@ -9,6 +9,7 @@ module.exports = (sequelize, DataTypes) => {
       RedeemItem.belongsTo(models.image, { as: "image", foreignKey: "image_id" });
       RedeemItem.belongsTo(models.item, { as: "single_item", foreignKey: "single_id" });
       RedeemItem.belongsToMany(models.set, { as: "sets", through: models.item_weight, foreignKey: "item_id", otherKey: "set_id" });
+      RedeemItem.hasMany(models.item_weight, { as: "weights", sourceKey: "id", foreignKey: "item_id" });
     }
     sanitize() {
       return {
