@@ -215,7 +215,7 @@ export default defineComponent({
 }
 
 .weight-input, .max-input {
-  width: 2.5rem;
+  width: 3rem;
   font-size: 0.7rem;
   padding: 0.1rem 0.2rem !important;
   margin: 0.1rem auto;

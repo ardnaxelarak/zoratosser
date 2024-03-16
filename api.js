@@ -227,6 +227,14 @@ router.route("/items/:name")
           res.status(400);
           return res.send({error: `set ${setName} not found`});
         }
+        if (!(setWeight.weight >= 0)) {
+          res.status(400);
+          return res.send({error: "set.weight must be nonnegative"});
+        }
+        if (!(setWeight.max_quantity >= 0) || !Number.isInteger(setWeight.max_quantity)) {
+          res.status(400);
+          return res.send({error: "set.max_quantity must be a nonnegative integer"});
+        }
 
         const [itemWeight, created] = await models.item_weight.findOrCreate({
           where: {
@@ -249,7 +257,7 @@ router.route("/items/:name")
       await item.save();
 
       for (const oldWeight of item.weights) {
-        if (!newWeights[oldWeight.id]) {
+        if (!newWeights[oldWeight.set_id]) {
           await oldWeight.update({
             weight: 0,
             max_quantity: 0,
