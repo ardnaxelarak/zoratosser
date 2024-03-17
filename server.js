@@ -107,7 +107,7 @@ app.get("/onboard", async (req, res) => {
 
   const sets = await models.set.findAll({where: {channel_twitch_id: user.twitch_id}});
   if (sets.length == 0) {
-    await model.set.create({channel_twitch_id: user.twitch_id, name: "default"});
+    await models.set.create({channel_twitch_id: user.twitch_id, name: "default"});
   }
 
   res.redirect("/myzora/edit");
@@ -197,6 +197,10 @@ async function redemptionReceived(event) {
   }
 
   const item = await item_selector.giveItem(event.broadcaster_user_id, set.id, event.user_id);
+  if (!item) {
+    return;
+  }
+
   zoraItem(event.broadcaster_user_id, {
     username: event.user_name,
     itemDisplay: item.name,

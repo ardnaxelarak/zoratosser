@@ -18,6 +18,9 @@ exports.giveItem = async function(channelId, setId, userId) {
   }, []);
 
   const item = getWeightedItem(weightedItems);
+  if (!item) {
+    return null;
+  }
 
   const image_url = (await item.getImage()).url;
 
@@ -31,6 +34,10 @@ function getWeightedItem(weightedItems) {
   const totalWeights = weightedItems.reduce((total, item) => {
     return total + item.weight;
   }, 0);
+
+  if (totalWeights <= 0) {
+    return null;
+  }
 
   var value = crypto.randomInt(totalWeights);
 
