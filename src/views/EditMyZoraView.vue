@@ -1,4 +1,5 @@
 <template>
+  <ImagePicker id="imagePickerModal" @image-selected="image_selected" @picker-closed="picker_closed" />
   <div class="card sets-card ms-4 mt-4">
     <div class="card-body">
       <h5 class="card-title">Sets</h5>
@@ -22,7 +23,9 @@
         <template v-for="item in itemsSorted">
           <template v-if="item.editing">
             <tr>
-              <td rowspan="2" class="text-center"><img class="item-icon" :src="item.image_url"></td>
+              <td rowspan="2" class="text-center">
+                <img class="item-icon editable-icon" :src="item.edit.image_url" :data-item="item.name" @click="pick_image">
+              </td>
               <td rowspan="2" class="item-name">
                 <input type="text" class="form-control form-control-sm" v-model="item.edit.name" />
               </td>
@@ -33,10 +36,10 @@
               </td>
               <td rowspan="2" class="row-management">
                 <button type="button" class="btn btn-success" :data-item="item.name" @click="save_item">
-                  <i class="bi bi-floppy-fill" :data-item="item.name"></i>
+                  <i class="bi bi-floppy-fill"></i>
                 </button>
                 <button type="button" class="btn btn-danger ms-1" :data-item="item.name" @click="cancel_item">
-                  <i class="bi bi-x-square-fill" :data-item="item.name"></i>
+                  <i class="bi bi-x-square-fill"></i>
                 </button>
               </td>
             </tr>
@@ -72,7 +75,12 @@
         </template>
         <template v-if="newItem">
           <tr>
-            <td rowspan="2" class="text-center"><img class="item-icon" :src="newItem.image_url"></td>
+            <template v-if="newItem.image_url">
+              <td rowspan="2" class="text-center editable-icon"><img class="item-icon" :src="newItem.image_url" @click="pick_new_image"></td>
+            </template>
+            <template v-else>
+              <td rowspan="2" class="text-center editable-icon"><img class="item-icon" src="/unknown.png" @click="pick_new_image"></td>
+            </template>
             <td rowspan="2" class="item-name">
               <input type="text" class="form-control form-control-sm" v-model="newItem.name" />
             </td>
@@ -117,14 +125,21 @@
 <script>
 import { defineComponent } from "vue";
 import axios from "axios";
+import { Modal } from "bootstrap";
 import sort from "immutable-sort";
 
+import ImagePicker from '../components/ImagePicker.vue'
+
 export default defineComponent({
+  components: {
+    ImagePicker,
+  },
   data() {
     return {
       sets: [],
       items: [],
       newItem: null,
+      imagePickerItem: null,
     };
   },
   computed: {
@@ -167,6 +182,27 @@ export default defineComponent({
       }
 
       item.editing = true;
+    },
+    picker_closed() {
+      this.imagePickerItem = null;
+    },
+    image_selected(data) {
+      if (!this.imagePickerItem) {
+        return;
+      }
+
+      this.imagePickerItem.image_id = data.id;
+      this.imagePickerItem.image_url = data.url;
+    },
+    pick_image(event) {
+      const item = this.itemMap[event.target.dataset.item];
+      if (!item) {
+        return;
+      }
+
+      this.imagePickerItem = item.edit;
+      const modal = Modal.getOrCreateInstance("#imagePickerModal");
+      modal.show();
     },
     async save_item(event) {
       const item = this.itemMap[event.target.dataset.item];
@@ -212,12 +248,19 @@ export default defineComponent({
         this.newItem.sets[set.name] = { weight: 0, max_quantity: 0 };
       }
     },
+    pick_new_image() {
+      this.imagePickerItem = this.newItem;
+      const modal = Modal.getOrCreateInstance("#imagePickerModal");
+      modal.show();
+    },
     async save_create_item() {
       if (!this.newItem) {
         return;
       }
 
-      this.newItem.image_id = 1;
+      if (!this.newItem.image_id) {
+        return;
+      }
 
       try {
         const response = await axios.post("/api/items", this.newItem);
@@ -292,7 +335,15 @@ export default defineComponent({
   margin: 0.3rem 0;
 }
 
+.row-management .btn i {
+  pointer-events: none;
+}
+
 .row-management .btn:hover {
   color: var(--bs-btn-hover-color);
+}
+
+.editable-icon {
+  cursor: pointer;
 }
 </style>
