@@ -30,8 +30,8 @@
                 <input type="text" class="form-control form-control-sm" v-model="item.edit.name" />
               </td>
               <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="item.edit.weigh_by_remainder"></td>
-              <td class="text-end no-bottom-border">Weight:</td>
-              <td class="text-center align-bottom no-bottom-border" v-for="set in sets">
+              <td class="text-end">Weight:</td>
+              <td class="text-center align-bottom" v-for="set in sets">
                 <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" v-model="item.edit.sets[set.id].weight" />
               </td>
               <td rowspan="2" class="row-management">
@@ -44,10 +44,13 @@
               </td>
             </tr>
             <tr>
-              <td class="text-end">Max:</td>
-              <td class="text-center align-bottom" v-for="set in sets">
+              <td class="text-end no-top-border">Max:</td>
+              <td class="text-center align-bottom no-top-border" v-for="set in sets">
                 <input type="number" class="max-input form-control form-control-sm" min="0" v-model="item.edit.sets[set.id].max_quantity" />
               </td>
+            </tr>
+            <tr v-if="item.edit.error">
+              <td :colspan="tableCols" class="text-error text-center no-top-border">{{ item.edit.error }}</td>
             </tr>
           </template>
           <template v-else>
@@ -55,8 +58,8 @@
               <td rowspan="2" class="text-center"><img class="item-icon" :src="item.image_url"></td>
               <td rowspan="2" class="item-name">{{ item.name }}</td>
               <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="item.weigh_by_remainder" disabled></td>
-              <td class="text-end no-bottom-border">Weight:</td>
-              <td class="text-center align-bottom no-bottom-border" v-for="set in sets">
+              <td class="text-end">Weight:</td>
+              <td class="text-center align-bottom" v-for="set in sets">
                 {{ item.sets[set.id]?.weight || 0 }}
               </td>
               <td rowspan="2" class="row-management">
@@ -66,8 +69,8 @@
               </td>
             </tr>
             <tr>
-              <td class="text-end">Max:</td>
-              <td class="text-center align-bottom" v-for="set in sets">
+              <td class="text-end no-top-border">Max:</td>
+              <td class="text-center align-bottom no-top-border" v-for="set in sets">
                 {{ item.sets[set.id]?.max_quantity || 0 }}
               </td>
             </tr>
@@ -99,18 +102,17 @@
             </td>
           </tr>
           <tr>
-            <td class="text-end">Max:</td>
-            <td class="text-center align-bottom" v-for="set in sets">
+            <td class="text-end no-top-border">Max:</td>
+            <td class="text-center align-bottom no-top-border" v-for="set in sets">
               <input type="number" class="max-input form-control form-control-sm" min="0" v-model="newItem.sets[set.id].max_quantity" />
             </td>
           </tr>
+          <tr v-if="newItem.error">
+            <td :colspan="tableCols" class="text-error text-center no-top-border">{{ newItem.error }}</td>
+          </tr>
         </template>
         <tr v-else>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
+          <td :colspan="tableCols - 1"></td>
           <td class="row-management">
             <button type="button" class="btn btn-primary" @click="create_item">
               <i class="bi bi-plus"></i>
@@ -161,6 +163,9 @@ export default defineComponent({
           return 0;
         }
       });
+    },
+    tableCols() {
+      return 5 + this.sets.length;
     },
   },
   async created() {
@@ -230,7 +235,19 @@ export default defineComponent({
         item.edit = null;
         item.editing = false;
       } catch (err) {
-        console.log(err);
+        if (err.response) {
+          switch (err.response.data?.error?.code) {
+            case "missing_field":
+              item.edit.error = `${err.response.data.error.field} is required`;
+              break;
+            case "invalid_value":
+              item.edit.error = `${err.response.data.error.field} has an invalid value`;
+              break;
+            default:
+              item.edit.error = err.response.data;
+              break;
+          }
+        }
       }
     },
     cancel_item(event) {
@@ -243,7 +260,7 @@ export default defineComponent({
       item.editing = false;
     },
     create_item() {
-      this.newItem = {sets: {}};
+      this.newItem = {weigh_by_remainder: true, sets: {}};
       for (const set of this.sets) {
         this.newItem.sets[set.id] = { weight: 0, max_quantity: 0 };
       }
@@ -259,6 +276,7 @@ export default defineComponent({
       }
 
       if (!this.newItem.image_id) {
+        this.newItem.error = "image is required";
         return;
       }
 
@@ -270,6 +288,19 @@ export default defineComponent({
         this.newItem = null;
       } catch (err) {
         console.log(err);
+        if (err.response) {
+          switch (err.response.data?.error?.code) {
+            case "missing_field":
+              this.newItem.error = `${err.response.data.error.field} is required`;
+              break;
+            case "invalid_value":
+              this.newItem.error = `${err.response.data.error.field} has an invalid value`;
+              break;
+            default:
+              this.newItem.error = err.response.data;
+              break;
+          }
+        }
       }
     },
     cancel_create_item() {
@@ -293,13 +324,16 @@ export default defineComponent({
   width: fit-content;
 }
 
-.weight-table th, .weight-table td {
+.weight-table td, .weight-table th {
   padding: 0 0.5rem;
-  border-bottom: 1px solid #CCC;
 }
 
-.weight-table td.no-bottom-border {
-  border-bottom-width: 0px;
+.weight-table td {
+  border-top: 1px solid #CCC;
+}
+
+.weight-table td.no-top-border {
+  border-top-width: 0px;
 }
 
 .item-icon {
@@ -345,5 +379,9 @@ export default defineComponent({
 
 .editable-icon {
   cursor: pointer;
+}
+
+.text-error {
+  color: red;
 }
 </style>

@@ -27,7 +27,7 @@ function requireFields(...fields) {
     for (const field of fields) {
       if (!req.body[field]) {
         res.status(400);
-        return res.send({error: `Missing ${field}`});
+        return res.send({error: {code: "missing_field", field: field}});
       }
     }
     return next();
@@ -52,7 +52,7 @@ router.route("/images")
   .post(upload.single("image"), requireFields("name"), async (req, res) => {
     if (!req.file) {
       res.status(400);
-      return res.send({error: "Missing file"});
+      return res.send({error: {code: "missing_field", field: "file"}});
     }
 
     const shasum = crypto.createHash("sha1");
@@ -90,48 +90,6 @@ router.route("/sets")
     res.send(set.sanitize());
   })
 
-router.route("/sets/:set_id/items/:item_id")
-  .patch(async (req, res) => {
-    const user = req.session.passport.user;
-    const set = await models.set.findOne({where: {channel_twitch_id: user.twitch_id, id: req.params.set_id}});
-    const item = await models.item.findOne({where: {channel_twitch_id: user.twitch_id, id: req.params.item_id}});
-    if (!set) {
-      res.status(404);
-      return res.send({error: "set not found"});
-    }
-    if (!item) {
-      res.status(404);
-      return res.send({error: "item not found"});
-    }
-
-    const [item_weight, created] = await models.item_weight.findOrCreate({
-      where: {
-        channel_twitch_id: user.twitch_id,
-        set_id: set.id,
-        item_id: item.id,
-      },
-      defaults: {
-        weight: 0,
-        max_quantity: 0,
-      },
-      include: [
-        "item",
-        "set",
-      ],
-    });
-
-    if (req.body.weight) {
-      item_weight.weight = req.body.weight;
-    }
-    if (req.body.max_quantity) {
-      item_weight.max_quantity = req.body.max_quantity;
-    }
-
-    item_weight.save();
-
-    res.send(item_weight.sanitize());
-  })
-
 router.route("/items")
   .get(async (req, res) => {
     const user = req.session.passport.user;
@@ -146,19 +104,19 @@ router.route("/items")
 
     if (!image || (image.channel_twitch_id && image.channel_twitch_id != channelId)) {
       res.status(400);
-      return res.send({error: "image_id not found"});
+      return res.send({error: {code: "foreign_key_not_found", field: "image_id"}});
     }
 
     if (req.body.single_id) {
       const single = await models.item.findOne({where: {id: req.body.single_id}});
       if (!single || single.channel_twitch_id != channelId) {
-        return res.send({error: "single_id not found"});
+        return res.send({error: {code: "foreign_key_not_found", field: "single_id"}});
       }
       if (!req.body.single_quantity) {
-        return res.send({error: "single_quantity must be present if single_id is present"});
+        return res.send({error: {code: "missing_field", field: "single_quantity"}});
       }
       if (!(req.body.single_quantity > 0)) {
-        return res.send({error: "single_quantity must be positive"});
+        return res.send({error: {code: "invalid_value", field: "single_quantity"}});
       }
     }
 
@@ -195,13 +153,13 @@ router.route("/items/:id")
     if (req.body.single_id) {
       const single = await models.item.findOne({where: {id: req.body.single_id}});
       if (!single || single.channel_twitch_id != channelId) {
-        return res.send({error: "single_id not found"});
+        return res.send({error: {code: "foreign_key_not_found", field: "single_id"}});
       }
       if (!req.body.single_quantity) {
-        return res.send({error: "single_quantity must be present if single_id is present"});
+        return res.send({error: {code: "missing_field", field: "single_quantity"}});
       }
       if (!(req.body.single_quantity > 0)) {
-        return res.send({error: "single_quantity must be positive"});
+        return res.send({error: {code: "invalid_value", field: "single_quantity"}});
       }
     }
 
@@ -232,15 +190,15 @@ async function updateItemWeights(res, item, bodySets) {
 
       if (!set) {
         res.status(400);
-        return res.send({error: `set ${setId} not found`});
+        return res.send({error: {code: "foreign_key_not_found", field: "set"}});
       }
       if (!(setWeight.weight >= 0)) {
         res.status(400);
-        return res.send({error: "set.weight must be nonnegative"});
+        return res.send({error: {code: "invalid_value", field: "set.weight"}});
       }
       if (!(setWeight.max_quantity >= 0) || !Number.isInteger(setWeight.max_quantity)) {
         res.status(400);
-        return res.send({error: "set.max_quantity must be a nonnegative integer"});
+        return res.send({error: {code: "invalid_value", field: "set.max_quantity"}});
       }
     }
   }
