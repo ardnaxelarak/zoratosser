@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
       }
 
       return this.sets.reduce((map, obj) => {
-        map[obj.name] = {
+        map[obj.id] = {
           weight: obj.item_weight.weight,
           max_quantity: obj.item_weight.max_quantity,
         };

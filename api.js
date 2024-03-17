@@ -90,11 +90,11 @@ router.route("/sets")
     res.send(set.sanitize());
   })
 
-router.route("/sets/:set_name/items/:item_name")
+router.route("/sets/:set_id/items/:item_id")
   .patch(async (req, res) => {
     const user = req.session.passport.user;
-    const set = await models.set.findOne({where: {channel_twitch_id: user.twitch_id, name: req.params.name}});
-    const item = await models.item.findOne({where: {channel_twitch_id: user.twitch_id, name: req.params.name}});
+    const set = await models.set.findOne({where: {channel_twitch_id: user.twitch_id, id: req.params.set_id}});
+    const item = await models.item.findOne({where: {channel_twitch_id: user.twitch_id, id: req.params.item_id}});
     if (!set) {
       res.status(404);
       return res.send({error: "set not found"});
@@ -176,11 +176,11 @@ router.route("/items")
     return await updateItemWeights(res, item, req.body.sets);
   })
 
-router.route("/items/:name")
+router.route("/items/:id")
   .put(requireFields("image_id", "name"), async (req, res) => {
     const channelId = req.session.passport.user.twitch_id;
 
-    const item = await models.item.findOne({where: {channel_twitch_id: channelId, name: req.params.name}, include: ["image", "weights"]});
+    const item = await models.item.findOne({where: {channel_twitch_id: channelId, id: req.params.id}, include: ["image", "weights"]});
     if (!item) {
       return res.sendStatus(404);
     }
@@ -220,19 +220,19 @@ async function updateItemWeights(res, item, bodySets) {
   const channelId = item.channel_twitch_id;
   const setList = await models.set.findAll({where: {channel_twitch_id: channelId}});
   const setMap = setList.reduce((map, obj) => {
-    map[obj.name] = obj.id;
+    map[obj.id] = obj;
     return map;
   }, {});
 
   const newWeights = {};
   if (bodySets) {
-    for (const setName of Object.keys(bodySets)) {
-      const setWeight = bodySets[setName];
+    for (const setId of Object.keys(bodySets)) {
+      const setWeight = bodySets[setId];
+      const set = setMap[setId];
 
-      const setId = setMap[setName];
-      if (!setId) {
+      if (!set) {
         res.status(400);
-        return res.send({error: `set ${setName} not found`});
+        return res.send({error: `set ${setId} not found`});
       }
       if (!(setWeight.weight >= 0)) {
         res.status(400);
@@ -251,10 +251,8 @@ async function updateItemWeights(res, item, bodySets) {
     await item.save({transaction: t});
 
     if (bodySets) {
-      for (const setName of Object.keys(bodySets)) {
-        const setWeight = bodySets[setName];
-
-        const setId = setMap[setName];
+      for (const setId of Object.keys(bodySets)) {
+        const setWeight = bodySets[setId];
 
         const [itemWeight, created] = await models.item_weight.findOrCreate({
           where: {

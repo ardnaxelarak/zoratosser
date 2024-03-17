@@ -32,7 +32,7 @@
               <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="item.edit.weigh_by_remainder"></td>
               <td class="text-end no-bottom-border">Weight:</td>
               <td class="text-center align-bottom no-bottom-border" v-for="set in sets">
-                <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" v-model="item.edit.sets[set.name].weight" />
+                <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" v-model="item.edit.sets[set.id].weight" />
               </td>
               <td rowspan="2" class="row-management">
                 <button type="button" class="btn btn-success" :data-item="item.name" @click="save_item">
@@ -46,7 +46,7 @@
             <tr>
               <td class="text-end">Max:</td>
               <td class="text-center align-bottom" v-for="set in sets">
-                <input type="number" class="max-input form-control form-control-sm" min="0" v-model="item.edit.sets[set.name].max_quantity" />
+                <input type="number" class="max-input form-control form-control-sm" min="0" v-model="item.edit.sets[set.id].max_quantity" />
               </td>
             </tr>
           </template>
@@ -57,7 +57,7 @@
               <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="item.weigh_by_remainder" disabled></td>
               <td class="text-end no-bottom-border">Weight:</td>
               <td class="text-center align-bottom no-bottom-border" v-for="set in sets">
-                {{ item.sets[set.name]?.weight || 0 }}
+                {{ item.sets[set.id]?.weight || 0 }}
               </td>
               <td rowspan="2" class="row-management">
                 <button type="button" class="btn btn-primary" :data-item="item.name" @click="edit_item">
@@ -68,7 +68,7 @@
             <tr>
               <td class="text-end">Max:</td>
               <td class="text-center align-bottom" v-for="set in sets">
-                {{ item.sets[set.name]?.max_quantity || 0 }}
+                {{ item.sets[set.id]?.max_quantity || 0 }}
               </td>
             </tr>
           </template>
@@ -87,7 +87,7 @@
             <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="newItem.weigh_by_remainder"></td>
             <td class="text-end no-bottom-border">Weight:</td>
             <td class="text-center align-bottom no-bottom-border" v-for="set in sets">
-              <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" v-model="newItem.sets[set.name].weight" />
+              <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" v-model="newItem.sets[set.id].weight" />
             </td>
             <td rowspan="2" class="row-management">
               <button type="button" class="btn btn-success" @click="save_create_item">
@@ -101,7 +101,7 @@
           <tr>
             <td class="text-end">Max:</td>
             <td class="text-center align-bottom" v-for="set in sets">
-              <input type="number" class="max-input form-control form-control-sm" min="0" v-model="newItem.sets[set.name].max_quantity" />
+              <input type="number" class="max-input form-control form-control-sm" min="0" v-model="newItem.sets[set.id].max_quantity" />
             </td>
           </tr>
         </template>
@@ -176,8 +176,8 @@ export default defineComponent({
 
       item.edit = JSON.parse(JSON.stringify(item));
       for (const set of this.sets) {
-        if (!item.edit.sets[set.name]) {
-          item.edit.sets[set.name] = { weight: 0, max_quantity: 0 };
+        if (!item.edit.sets[set.id]) {
+          item.edit.sets[set.id] = { weight: 0, max_quantity: 0 };
         }
       }
 
@@ -220,7 +220,7 @@ export default defineComponent({
       };
 
       try {
-        const response = await axios.put(`/api/items/${item.name}`, requestItem);
+        const response = await axios.put(`/api/items/${item.id}`, requestItem);
 
         const newItem = response.data;
         for (const key of Object.keys(newItem)) {
@@ -245,7 +245,7 @@ export default defineComponent({
     create_item() {
       this.newItem = {sets: {}};
       for (const set of this.sets) {
-        this.newItem.sets[set.name] = { weight: 0, max_quantity: 0 };
+        this.newItem.sets[set.id] = { weight: 0, max_quantity: 0 };
       }
     },
     pick_new_image() {
