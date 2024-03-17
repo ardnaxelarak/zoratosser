@@ -1,6 +1,6 @@
 <template>
   <div class="modal fade" :id="id" data-bs-background="static" data-bs-keyboard="false" @hidden.bs.modal="hidden">
-    <div class="modal-dialog image-picker">
+    <div class="modal-dialog image-picker modal-lg">
       <div class="modal-header">
         <h5 class="modal-title">Choose an Image</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -15,7 +15,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary">Upload</button>
+        <button type="button" class="btn btn-primary" @click="upload_clicked">Upload</button>
       </div>
     </div>
   </div>
@@ -35,6 +35,9 @@ export default defineComponent({
     };
   },
   computed: {
+    modal() {
+      return Modal.getOrCreateInstance(`#${this.id}`);
+    },
     imageMap() {
       return this.images.reduce((map, obj) => {
         map[obj.id] = obj;
@@ -62,9 +65,42 @@ export default defineComponent({
     icon_clicked(event) {
       const imageId = event.target.dataset.imageId;
       const image = this.imageMap[imageId];
-      const modal = Modal.getOrCreateInstance(`#${this.id}`);
       this.$emit("imageSelected", {id: image.id, url: image.url});
-      modal.hide();
+      this.modal.hide();
+    },
+    async upload_clicked(event) {
+      const pickerOpts = {
+        types: [
+          {
+            description: "PNG Images",
+            accept: { "image/png": [".png"] },
+          },
+        ],
+        excludeAcceptAllOption: true,
+        multiple: false,
+      };
+
+      const formData = new FormData();
+      try {
+        const [fileHandle] = await window.showOpenFilePicker(pickerOpts);
+        formData.append("image", await fileHandle.getFile());
+        formData.append("name", fileHandle.name.replace(/\.png$/, ""));
+      } catch(err) {
+        console.log(err);
+        return;
+      }
+
+      const response = await axios.post("/api/images", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log(response);
+
+      this.images.push(response.data);
+      this.$emit("imageSelected", {id: response.data.id, url: response.data.url});
+      this.modal.hide();
     },
     hidden() {
       this.$emit("pickerClosed");
@@ -84,6 +120,7 @@ export default defineComponent({
 
 .image-picker .modal-body {
   display: flex;
+  flex-wrap: wrap;
 }
 
 .image-card {
