@@ -162,16 +162,18 @@ router.route("/items")
       }
     }
 
-    const item = await models.item.create({
+    const item = await models.item.build({
       channel_twitch_id: channelId,
       name: req.body.name,
       image_id: req.body.image_id,
       single_id: req.body.single_id,
       single_quantity: req.body.single_quantity,
-      weigh_by_remainder: weigh_by_remainder,
+      weigh_by_remainder: req.body.weigh_by_remainder,
     });
 
-    res.send(item.sanitize());
+    item.weights = [];
+
+    return await updateItemWeights(res, item, req.body.sets);
   })
 
 router.route("/items/:name")
@@ -211,36 +213,59 @@ router.route("/items/:name")
       weigh_by_remainder: req.body.weigh_by_remainder,
     });
 
-    const setList = await models.set.findAll({where: {channel_twitch_id: channelId}});
-    const setMap = setList.reduce((map, obj) => {
-      map[obj.name] = obj.id;
-      return map;
-    }, {});
+    return await updateItemWeights(res, item, req.body.sets);
+  })
 
-    const newWeights = {};
-    if (req.body.sets) {
-      for (const setName of Object.keys(req.body.sets)) {
-        const setWeight = req.body.sets[setName];
+async function updateItemWeights(res, item, bodySets) {
+  const channelId = item.channel_twitch_id;
+  const setList = await models.set.findAll({where: {channel_twitch_id: channelId}});
+  const setMap = setList.reduce((map, obj) => {
+    map[obj.name] = obj.id;
+    return map;
+  }, {});
+
+  const newWeights = {};
+  if (bodySets) {
+    for (const setName of Object.keys(bodySets)) {
+      const setWeight = bodySets[setName];
+
+      const setId = setMap[setName];
+      if (!setId) {
+        res.status(400);
+        return res.send({error: `set ${setName} not found`});
+      }
+      if (!(setWeight.weight >= 0)) {
+        res.status(400);
+        return res.send({error: "set.weight must be nonnegative"});
+      }
+      if (!(setWeight.max_quantity >= 0) || !Number.isInteger(setWeight.max_quantity)) {
+        res.status(400);
+        return res.send({error: "set.max_quantity must be a nonnegative integer"});
+      }
+    }
+  }
+
+  const t = await models.sequelize.transaction();
+
+  try {
+    await item.save({transaction: t});
+
+    if (bodySets) {
+      for (const setName of Object.keys(bodySets)) {
+        const setWeight = bodySets[setName];
 
         const setId = setMap[setName];
-        if (!setId) {
-          res.status(400);
-          return res.send({error: `set ${setName} not found`});
-        }
-        if (!(setWeight.weight >= 0)) {
-          res.status(400);
-          return res.send({error: "set.weight must be nonnegative"});
-        }
-        if (!(setWeight.max_quantity >= 0) || !Number.isInteger(setWeight.max_quantity)) {
-          res.status(400);
-          return res.send({error: "set.max_quantity must be a nonnegative integer"});
-        }
 
         const [itemWeight, created] = await models.item_weight.findOrCreate({
           where: {
             set_id: setId,
             item_id: item.id,
           },
+          defaults: {
+            weight: 0,
+            max_quantity: 0,
+          },
+          transaction: t,
         });
 
         itemWeight.set({
@@ -252,33 +277,29 @@ router.route("/items/:name")
       }
     }
 
-    const t = await models.sequelize.transaction();
-    try {
-      await item.save();
-
-      for (const oldWeight of item.weights) {
-        if (!newWeights[oldWeight.set_id]) {
-          await oldWeight.update({
-            weight: 0,
-            max_quantity: 0,
-          });
-        }
+    for (const oldWeight of item.weights) {
+      if (!newWeights[oldWeight.set_id]) {
+        await oldWeight.update({
+          weight: 0,
+          max_quantity: 0,
+        }, {transaction: t});
       }
-
-      for (const newWeight of Object.values(newWeights)) {
-        await newWeight.save();
-      }
-
-      await t.commit();
-    } catch (err) {
-      console.log(err);
-      await t.rollback();
-      res.sendStatus(500);
     }
 
-    await item.reload({include: ["image", "sets"]});
-    res.send(item.sanitize());
-  })
+    for (const newWeight of Object.values(newWeights)) {
+      await newWeight.save({transaction: t});
+    }
+
+    await t.commit();
+  } catch (err) {
+    console.log(err);
+    await t.rollback();
+    return res.sendStatus(500);
+  }
+
+  await item.reload({include: ["image", "sets"]});
+  return res.send(item.sanitize());
+}
 
 router.use((err, req, res, next) => {
   console.error(err.stack);

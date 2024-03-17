@@ -70,6 +70,45 @@
             </tr>
           </template>
         </template>
+        <template v-if="newItem">
+          <tr>
+            <td rowspan="2" class="text-center"><img class="item-icon" :src="newItem.image_url"></td>
+            <td rowspan="2" class="item-name">
+              <input type="text" class="form-control form-control-sm" v-model="newItem.name" />
+            </td>
+            <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="newItem.weigh_by_remainder"></td>
+            <td class="text-end no-bottom-border">Weight:</td>
+            <td class="text-center align-bottom no-bottom-border" v-for="set in sets">
+              <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" v-model="newItem.sets[set.name].weight" />
+            </td>
+            <td rowspan="2" class="row-management">
+              <button type="button" class="btn btn-success" @click="save_create_item">
+                <i class="bi bi-floppy-fill"></i>
+              </button>
+              <button type="button" class="btn btn-danger ms-1" @click="cancel_create_item">
+                <i class="bi bi-x-square-fill"></i>
+              </button>
+            </td>
+          </tr>
+          <tr>
+            <td class="text-end">Max:</td>
+            <td class="text-center align-bottom" v-for="set in sets">
+              <input type="number" class="max-input form-control form-control-sm" min="0" v-model="newItem.sets[set.name].max_quantity" />
+            </td>
+          </tr>
+        </template>
+        <tr v-else>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td class="row-management">
+            <button type="button" class="btn btn-primary" @click="create_item">
+              <i class="bi bi-plus"></i>
+            </button>
+          </td>
+        </tr>
       </table>
     </div>
   </div>
@@ -85,6 +124,7 @@ export default defineComponent({
     return {
       sets: [],
       items: [],
+      newItem: null,
     };
   },
   computed: {
@@ -166,6 +206,32 @@ export default defineComponent({
       item.edit = null;
       item.editing = false;
     },
+    create_item() {
+      this.newItem = {sets: {}};
+      for (const set of this.sets) {
+        this.newItem.sets[set.name] = { weight: 0, max_quantity: 0 };
+      }
+    },
+    async save_create_item() {
+      if (!this.newItem) {
+        return;
+      }
+
+      this.newItem.image_id = 1;
+
+      try {
+        const response = await axios.post("/api/items", this.newItem);
+
+        const newItem = response.data;
+        this.items.push(newItem);
+        this.newItem = null;
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    cancel_create_item() {
+      this.newItem = null;
+    },
   },
 });
 </script>
@@ -223,6 +289,7 @@ export default defineComponent({
 
 .row-management .btn {
   color: var(--bs-btn-bg);
+  margin: 0.3rem 0;
 }
 
 .row-management .btn:hover {
