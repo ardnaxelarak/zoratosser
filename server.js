@@ -13,6 +13,7 @@ const twitchStrategy = require("passport-twitch-new").Strategy;
 const api = require("./api.js");
 const cache = require("./cache.js");
 const consts = require("./consts.js");
+const item_selector = require("./item_selector.js");
 const models = require("./models");
 const twitch_api = require("./twitch_api.js");
 const util = require("./util.js");
@@ -168,12 +169,17 @@ server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-function redemptionReceived(event) {
+async function redemptionReceived(event) {
   console.log("Channel Id: " + event.broadcaster_user_id);
   console.log("User Id: " + event.user_id);
   console.log("User Name: " + event.user_name);
   console.log("Redemption: " + event.reward.title);
-  zoraItem(event.broadcaster_user_id, {username: event.user_name, itemDisplay: "Flippers", itemSrc: "/flippers.png"});
+  const item = await item_selector.giveItem(event.broadcaster_user_id, 1, event.user_id);
+  zoraItem(event.broadcaster_user_id, {
+    username: event.user_name,
+    itemDisplay: item.name,
+    itemSrc: item.url,
+  });
 }
 
 function deduplicateNotification(id) {
@@ -183,4 +189,3 @@ function deduplicateNotification(id) {
   notifications.set(id, Date.now());
   return true;
 }
-
