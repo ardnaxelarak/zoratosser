@@ -5,7 +5,9 @@ const cookieSession = require("cookie-session");
 const crypto = require("crypto");
 const express = require("express");
 const history = require("connect-history-api-fallback");
+const http = require("http");
 const passport = require("passport");
+const { Server } = require("socket.io");
 const twitchStrategy = require("passport-twitch-new").Strategy;
 
 const api = require("./api.js");
@@ -63,6 +65,7 @@ passport.use(new twitchStrategy({
   async function(accessToken, refreshToken, profile, done) {
     const [user, created] = await models.user.findOrCreate({where: {twitch_id: profile.id}});
     user.twitch_display_name = profile.display_name;
+    user.twitch_lower_name = profile.display_name.toLowerCase();
     user.access_token = accessToken;
     user.refresh_token = refreshToken;
     user.save();
@@ -123,10 +126,45 @@ app.post("/redeem", async (req, res) => {
   res.sendStatus(200);
 });
 
+const server = http.createServer(app);
+const io = new Server(server);
+
 app.use(history());
 app.use(express.static("dist"));
 
-app.listen(port, () => {
+const clients = [];
+
+io.on("connection", client => {
+  clients.push({client: client});
+
+  client.on('disconnect', function (reason) {
+    const index = clients.findIndex(el => el.client === client);
+    if (index >= 0) {
+      clients.splice(index, 1);
+    }
+  });
+
+  client.on('message', async function(...args) {
+    if (args.length >= 2 && args[0] === "register") {
+      const found = clients.find(el => el.client === client);
+      const channelName = args[1].toLowerCase();
+      const channel = await models.user.findOne({where: {twitch_lower_name: channelName}});
+      if (found && channel) {
+        found.channel = channel.twitch_id;
+      }
+    }
+  });
+});
+
+function zoraItem(channel, data) {
+  for (const client of clients) {
+    if (client.channel == channel) {
+      client.client.send("zora", data);
+    }
+  }
+};
+
+server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
@@ -135,6 +173,7 @@ function redemptionReceived(event) {
   console.log("User Id: " + event.user_id);
   console.log("User Name: " + event.user_name);
   console.log("Redemption: " + event.reward.title);
+  zoraItem(event.broadcaster_user_id, {username: event.user_name, itemDisplay: "Flippers", itemSrc: "/flippers.png"});
 }
 
 function deduplicateNotification(id) {

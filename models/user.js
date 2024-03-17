@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
   User.init({
     twitch_id: DataTypes.STRING,
     twitch_display_name: DataTypes.STRING,
+    twitch_lower_name: DataTypes.STRING,
     access_token: DataTypes.STRING,
     refresh_token: DataTypes.STRING,
     zora_host: DataTypes.BOOLEAN,
