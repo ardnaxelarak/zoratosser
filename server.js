@@ -85,11 +85,32 @@ app.use("/api", api);
 
 app.get("/authenticate", passport.authenticate("twitch", { scope: channelScopes.join("+") }));
 app.get("/twitch_callback", passport.authenticate("twitch", { failureRedirect: "/" }), (req, res) => {
-  res.redirect("/");
+  res.redirect("/onboard");
 });
 
-app.get("/add_image", (req, res) => {
-  res.render("add_image.html.ejs");
+app.get("/onboard", async (req, res) => {
+  if (!req.session.passport?.user) {
+    return res.sendStatus(401);
+  }
+
+  const user = await models.user.findByPk(req.session.passport.user.id);
+  if (!user) {
+    return res.sendStatus(500);
+  }
+
+  if (!user.zora_host) {
+    await user.update({zora_host: true});
+    if (!await twitch_api.verifyRedeemWebhook(user.twitch_id)) {
+      return res.sendStatus(500);
+    }
+  }
+
+  const sets = await models.set.findAll({where: {channel_twitch_id: user.twitch_id}});
+  if (sets.length == 0) {
+    await model.set.create({channel_twitch_id: user.twitch_id, name: "default"});
+  }
+
+  res.redirect("/myzora/edit");
 });
 
 app.post("/redeem", async (req, res) => {
@@ -170,11 +191,12 @@ server.listen(port, () => {
 });
 
 async function redemptionReceived(event) {
-  console.log("Channel Id: " + event.broadcaster_user_id);
-  console.log("User Id: " + event.user_id);
-  console.log("User Name: " + event.user_name);
-  console.log("Redemption: " + event.reward.title);
-  const item = await item_selector.giveItem(event.broadcaster_user_id, 1, event.user_id);
+  const set = await models.set.findOne({where: {channel_twitch_id: event.broadcaster_user_id}});
+  if (!set) {
+    return;
+  }
+
+  const item = await item_selector.giveItem(event.broadcaster_user_id, set.id, event.user_id);
   zoraItem(event.broadcaster_user_id, {
     username: event.user_name,
     itemDisplay: item.name,
