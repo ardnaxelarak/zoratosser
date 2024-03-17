@@ -173,6 +173,23 @@ export default defineComponent({
     axios.get("/api/items").then(response => this.items = response.data);
   },
   methods: {
+    parseError(response, item) {
+      if (response.status == 502) {
+        item.error = "Server is down. Probably karafruit's fault.";
+        return;
+      }
+      switch (response.data?.error?.code) {
+        case "missing_field":
+          item.error = `${response.data.error.field} is required`;
+          return;
+        case "invalid_value":
+          item.error = `${response.data.error.field} has an invalid value`;
+          return;
+        default:
+          item.error = response.data;
+          return;
+      }
+    },
     edit_item(event) {
       const item = this.itemMap[event.target.dataset.item];
       if (!item) {
@@ -236,17 +253,7 @@ export default defineComponent({
         item.editing = false;
       } catch (err) {
         if (err.response) {
-          switch (err.response.data?.error?.code) {
-            case "missing_field":
-              item.edit.error = `${err.response.data.error.field} is required`;
-              break;
-            case "invalid_value":
-              item.edit.error = `${err.response.data.error.field} has an invalid value`;
-              break;
-            default:
-              item.edit.error = err.response.data;
-              break;
-          }
+          this.parseError(err.response, item.edit);
         }
       }
     },
@@ -287,19 +294,8 @@ export default defineComponent({
         this.items.push(newItem);
         this.newItem = null;
       } catch (err) {
-        console.log(err);
         if (err.response) {
-          switch (err.response.data?.error?.code) {
-            case "missing_field":
-              this.newItem.error = `${err.response.data.error.field} is required`;
-              break;
-            case "invalid_value":
-              this.newItem.error = `${err.response.data.error.field} has an invalid value`;
-              break;
-            default:
-              this.newItem.error = err.response.data;
-              break;
-          }
+          this.parseError(err.response, this.newItem);
         }
       }
     },

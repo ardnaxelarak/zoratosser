@@ -91,9 +91,11 @@ export default defineComponent({
       $('.zoraUsername').text(data.username);
       $('.zoraItemSection').hide();
       $('.zoraItemName').text(data.itemDisplay);
+      setTimeout(this.playZoraSplash, 1400);
       setTimeout(this.showItem, 2466);
       setTimeout(this.showItemName, 2600);
       setTimeout(this.playItemFanfare, 2700);
+      setTimeout(this.playZoraSplash, 4900);
     },
     showItem() {
       $('.zoraItem').show();
@@ -103,6 +105,9 @@ export default defineComponent({
     },
     playItemFanfare() {
       new Audio('/item_get.mp3').play();
+    },
+    playZoraSplash() {
+      new Audio('/zora_splash.mp3').play();
     },
   },
 });

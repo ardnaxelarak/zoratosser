@@ -12,14 +12,14 @@ module.exports = (sequelize, DataTypes) => {
       return {
         id: this.id,
         name: this.name,
-        redeem_name: this.redeem_name,
+        redeem_id: this.redeem_id,
       };
     }
   }
   RedeemSet.init({
     channel_twitch_id: DataTypes.STRING,
     name: DataTypes.STRING,
-    redeem_name: DataTypes.STRING,
+    redeem_id: DataTypes.STRING,
   }, {
     sequelize,
     modelName: "set",

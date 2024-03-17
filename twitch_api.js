@@ -160,4 +160,37 @@ exports.verifyRedeemWebhook = async function(userId) {
   }
 
   return await exports.createEventSubWebhook(userId, consts.CHANNEL_POINT_REDEEM, 1, "/redeem");
-}
+};
+
+exports.createChannelReward = async function(userId, opts) {
+  const user = await models.user.findOne({where: {twitch_id: userId}});
+  const accessToken = await exports.validateUserToken(userId);
+
+  if (!accessToken) {
+    return null;
+  }
+
+  try {
+    const response = await axios.post(consts.CHANNEL_REWARD_URL, {
+      title: opts.title,
+      cost: opts.cost,
+      prompt: opts.description,
+      is_enabled: false,
+      background_color: opts.color,
+    },
+    {
+      params: {
+        "broadcaster_id": userId,
+      },
+      headers: {
+        "Authorization": "Bearer " + accessToken,
+        "Client-Id": process.env.TWITCH_CLIENT_ID,
+      },
+    });
+
+    return response.data.data[0].id;
+  } catch (err) {
+    util.logAxiosError(err);
+    return null;
+  }
+};

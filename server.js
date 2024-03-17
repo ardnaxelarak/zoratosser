@@ -24,6 +24,7 @@ const port = process.env.PORT || 3444;
 const notifications = new Map();
 
 const channelScopes = [
+  "channel:manage:redemptions",
   "channel:read:redemptions",
 ];
 
@@ -83,7 +84,7 @@ passport.deserializeUser((user, done) => {
 
 app.use("/api", api);
 
-app.get("/authenticate", passport.authenticate("twitch", { scope: channelScopes.join("+") }));
+app.get("/authenticate", passport.authenticate("twitch", { scope: channelScopes }));
 app.get("/twitch_callback", passport.authenticate("twitch", { failureRedirect: "/" }), (req, res) => {
   res.redirect("/onboard");
 });
@@ -108,6 +109,18 @@ app.get("/onboard", async (req, res) => {
   const sets = await models.set.findAll({where: {channel_twitch_id: user.twitch_id}});
   if (sets.length == 0) {
     await models.set.create({channel_twitch_id: user.twitch_id, name: "default"});
+  }
+
+  const noIdSets = await models.set.findAll({where: {channel_twitch_id: user.twitch_id, redeem_id: {[op.is]: null}}});
+  for (const set of noIdSets) {
+    const redeemId = await twitch_api.createChannelReward(user.twitch_id, {
+      title: `ZoraTosser - ${set.name} set`,
+      cost: 500,
+      background_color: "#4556a7",
+    });
+    if (redeemId) {
+      set.update({redeem_id: redeemId});
+    }
   }
 
   res.redirect("/myzora/edit");
@@ -191,7 +204,7 @@ server.listen(port, () => {
 });
 
 async function redemptionReceived(event) {
-  const set = await models.set.findOne({where: {channel_twitch_id: event.broadcaster_user_id}});
+  const set = await models.set.findOne({where: {channel_twitch_id: event.broadcaster_user_id, redeem_id: event.reward.id}});
   if (!set) {
     return;
   }
