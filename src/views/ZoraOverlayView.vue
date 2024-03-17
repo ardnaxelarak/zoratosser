@@ -93,12 +93,16 @@ export default defineComponent({
       $('.zoraItemName').text(data.itemDisplay);
       setTimeout(this.showItem, 2466);
       setTimeout(this.showItemName, 2600);
+      setTimeout(this.playItemFanfare, 2700);
     },
     showItem() {
       $('.zoraItem').show();
     },
     showItemName() {
       $('.zoraItemSection').show();
+    },
+    playItemFanfare() {
+      new Audio('/item_get.mp3').play();
     },
   },
 });
