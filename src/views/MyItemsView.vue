@@ -49,11 +49,11 @@ export default defineComponent({
 </script>
 
 <style>
-.items-table {
+.item-table {
   width: fit-content;
 }
 
-.items-table td, .items-table th {
+.item-table td, .item-table th {
   padding: 0 0.5rem;
   border-top: 1px solid #CCC;
 }

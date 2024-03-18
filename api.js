@@ -3,6 +3,7 @@ const express = require("express");
 const multer = require("multer");
 const op = require("sequelize").Op;
 const os = require("os");
+const path = require("path");
 const router = express.Router();
 const s3 = require("@aws-sdk/client-s3");
 
@@ -59,10 +60,12 @@ router.route("/images")
     shasum.update(req.file.buffer);
     const hash = shasum.digest("hex");
 
+    const ext = path.extname(req.body.name);
+
     const s3params = {
       Body: req.file.buffer,
       Bucket: process.env.S3_BUCKET_NAME,
-      Key: hash + ".png",
+      Key: hash + ext,
     };
 
     const command = new s3.PutObjectCommand(s3params);

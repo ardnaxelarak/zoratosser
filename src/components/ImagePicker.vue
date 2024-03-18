@@ -72,8 +72,8 @@ export default defineComponent({
       const pickerOpts = {
         types: [
           {
-            description: "PNG Images",
-            accept: { "image/png": [".png"] },
+            description: "Images",
+            accept: { "image/*": [".png", ".gif", ".jpeg", ".jpg", ".svg"] },
           },
         ],
         excludeAcceptAllOption: true,
@@ -84,7 +84,7 @@ export default defineComponent({
       try {
         const [fileHandle] = await window.showOpenFilePicker(pickerOpts);
         formData.append("image", await fileHandle.getFile());
-        formData.append("name", fileHandle.name.replace(/\.png$/, ""));
+        formData.append("name", fileHandle.name);
       } catch(err) {
         console.log(err);
         return;
