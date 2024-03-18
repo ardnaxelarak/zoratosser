@@ -257,6 +257,39 @@ async function updateItemWeights(res, item, bodySets) {
   return res.send(item.sanitize());
 }
 
+router.route("/obtained_items/:channel_name")
+  .get(async (req, res) => {
+    const userId = req.session.passport.user.id;
+    const user = await models.user.findByPk(userId);
+    const channel = await models.user.findOne({where: {twitch_lower_name: req.params.channel_name.toLowerCase()}});
+
+    if (!user || !channel) {
+      return res.sendStatus(404);
+    }
+
+    const obtainedItems = await models.user_item.findAll({
+      where: {
+        channel_id: channel.id, 
+        user_id: user.id
+      },
+      include: [
+        {
+          model: models.item,
+          as: "item",
+          include: "image",
+        }
+      ]});
+
+    const response = obtainedItems.map(item => ({
+      id: item.item_id,
+      name: item.item.name,
+      image_url: item.item.image.url,
+      quantity: item.quantity,
+    }));
+
+    res.send(response);
+  })
+
 router.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500);

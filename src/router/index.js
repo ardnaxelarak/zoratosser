@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import EditMyZoraView from '../views/EditMyZoraView.vue'
 import ZoraOverlayView from '../views/ZoraOverlayView.vue'
+import MyItemsView from '../views/MyItemsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,6 +21,11 @@ const router = createRouter({
       path: '/overlay/:username',
       name: 'zoraoverlay',
       component: ZoraOverlayView,
+    },
+    {
+      path: '/myitems/:channel',
+      name: 'itemview',
+      component: MyItemsView,
     },
   ]
 })
