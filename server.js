@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const express = require("express");
 const history = require("connect-history-api-fallback");
 const http = require("http");
+const op = require("sequelize").Op;
 const passport = require("passport");
 const { Server } = require("socket.io");
 const twitchStrategy = require("passport-twitch-new").Strategy;

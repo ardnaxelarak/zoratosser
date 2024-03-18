@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
       User.hasMany(models.image, { as: "images", sourceKey: "twitch_id", foreignKey: "channel_twitch_id"});
       User.hasMany(models.set, { as: "sets", sourceKey: "twitch_id", foreignKey: "channel_twitch_id"});
       User.hasMany(models.item, { as: "items", sourceKey: "twitch_id", foreignKey: "channel_twitch_id"});
+      User.belongsToMany(models.item, { as: "obtained_items", through: models.user_item, foreignKey: "user_id", otherKey: "item_id" });
     }
   }
   User.init({

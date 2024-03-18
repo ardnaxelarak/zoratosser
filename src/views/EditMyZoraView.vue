@@ -24,7 +24,7 @@
           <template v-if="item.editing">
             <tr>
               <td rowspan="2" class="text-center">
-                <img class="item-icon editable-icon" :src="item.edit.image_url" :data-item="item.name" @click="pick_image">
+                <img class="item-icon editable-icon" :src="item.edit.image_url" :data-item="item.id" @click="pick_image">
               </td>
               <td rowspan="2" class="item-name">
                 <input type="text" class="form-control form-control-sm" v-model="item.edit.name" />
@@ -35,10 +35,10 @@
                 <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" v-model="item.edit.sets[set.id].weight" />
               </td>
               <td rowspan="2" class="row-management">
-                <button type="button" class="btn btn-success" :data-item="item.name" @click="save_item">
+                <button type="button" class="btn btn-success" :data-item="item.id" @click="save_item">
                   <i class="bi bi-floppy-fill"></i>
                 </button>
-                <button type="button" class="btn btn-danger ms-1" :data-item="item.name" @click="cancel_item">
+                <button type="button" class="btn btn-danger ms-1" :data-item="item.id" @click="cancel_item">
                   <i class="bi bi-x-square-fill"></i>
                 </button>
               </td>
@@ -63,8 +63,8 @@
                 {{ item.sets[set.id]?.weight || 0 }}
               </td>
               <td rowspan="2" class="row-management">
-                <button type="button" class="btn btn-primary" :data-item="item.name" @click="edit_item">
-                  <i class="bi bi-pencil-fill" :data-item="item.name"></i>
+                <button type="button" class="btn btn-primary" :data-item="item.id" @click="edit_item">
+                  <i class="bi bi-pencil-fill" :data-id="item.name"></i>
                 </button>
               </td>
             </tr>
@@ -147,7 +147,7 @@ export default defineComponent({
   computed: {
     itemMap() {
       return this.items.reduce((map, obj) => {
-        map[obj.name] = obj;
+        map[obj.id] = obj;
         return map;
       }, {});
     },
