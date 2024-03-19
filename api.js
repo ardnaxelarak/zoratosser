@@ -284,7 +284,7 @@ router.route("/obtained_items/:channel_name")
     const response = obtainedItems.map(item => ({
       id: item.item_id,
       name: item.item.name,
-      image_url: item.item.image.url,
+      image: item.item.image.sanitize(),
       quantity: item.quantity,
     }));
 
