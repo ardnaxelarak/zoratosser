@@ -63,7 +63,7 @@ passport.use(new twitchStrategy({
     clientID: process.env.TWITCH_CLIENT_ID,
     clientSecret: process.env.TWITCH_CLIENT_SECRET,
     callbackURL: process.env.HOSTNAME + "/twitch_callback",
-    scope: userScopes.join("+"),
+    scope: userScopes,
   },
   async function(accessToken, refreshToken, profile, done) {
     const [user, created] = await models.user.findOrCreate({where: {twitch_id: profile.id}});
@@ -85,8 +85,16 @@ passport.deserializeUser((user, done) => {
 
 app.use("/api", api);
 
-app.get("/authenticate", passport.authenticate("twitch", { scope: channelScopes }));
+app.get("/authenticate", passport.authenticate("twitch"));
 app.get("/twitch_callback", passport.authenticate("twitch", { failureRedirect: "/" }), (req, res) => {
+  res.redirect("/");
+});
+
+app.get("/authenticate_host", passport.authenticate("twitch", {
+  scope: channelScopes,
+  callbackURL: process.env.HOSTNAME + "/twitch_host_callback",
+}));
+app.get("/twitch_host_callback", passport.authenticate("twitch", { failureRedirect: "/" }), (req, res) => {
   res.redirect("/onboard");
 });
 

@@ -12,17 +12,6 @@ const models = require("./models");
 const upload = multer({ dest: os.tempdir });
 const s3client = new s3.S3Client({ region: process.env.S3_REGION });
 
-function channelMatchesOrNull(channel_id) {
-  return {
-    where: {
-      [op.or]: [
-        {channel_twitch_id: {[op.is]: null}},
-        {channel_twitch_id: channel_id},
-      ]
-    }
-  };
-}
-
 function requireFields(...fields) {
   return (req, res, next) => {
     for (const field of fields) {
@@ -42,11 +31,20 @@ router.use((req, res, next) => {
   return next();
 });
 
+router.route("/image_sets")
+  .get(async (req, res) => {
+    const user = req.session.passport.user;
+
+    const imageSetList = await models.image_set.findAll({include: "images"});
+
+    res.send(imageSetList.map(m => m.sanitize()));
+  })
+
 router.route("/images")
   .get(async (req, res) => {
     const user = req.session.passport.user;
 
-    const imageList = await models.image.findAll(channelMatchesOrNull(user.twitch_id));
+    const imageList = await models.image.findAll({where: {channel_twitch_id: user.twitch_id}});
 
     res.send(imageList.map(m => m.sanitize()));
   })

@@ -1,17 +1,32 @@
 <template>
-  <div class="modal fade" :id="id" data-bs-background="static" data-bs-keyboard="false" @hidden.bs.modal="hidden">
+  <div ref="modal" class="modal fade" :id="id" data-bs-background="static" data-bs-keyboard="false">
     <div class="modal-dialog image-picker modal-lg">
       <div class="modal-header">
         <h5 class="modal-title">Choose an Image</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <template v-for="image in imagesSorted">
-          <div class="card image-card" :data-image-id="image.id" @click="icon_clicked">
-            <img class="card-img-top image-icon" :src="image.url">
-            <div class="card-footer text-body-secondary image-name text-center">{{ image.name }}</div>
-          </div>
-        </template>
+        <nav>
+          <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation" v-for="imageSet in imageSetsSorted">
+              <button class="nav-link" :data-toggle-name="imageSet.name" data-bs-toggle="tab" :data-bs-target='`div[data-set-name="${imageSet.name}"]`' type="button" role="tab">{{ imageSet.name }}</button>
+            </li>
+          </ul>
+        </nav>
+        <div class="tab-content">
+          <template v-for="imageSet in imageSetsSorted">
+            <div class="tab-pane fade" :data-set-name="imageSet.name">
+              <div class="image-list">
+                <template v-for="image in imageSet.images">
+                  <div class="card image-card" :data-image-id="image.id" @click="icon_clicked">
+                    <img class="card-img-top image-icon" :src="image.url">
+                    <div class="card-footer text-body-secondary image-name text-center">{{ image.name }}</div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -32,6 +47,7 @@ export default defineComponent({
   data() {
     return {
       images: [],
+      imageSets: [],
     };
   },
   computed: {
@@ -44,10 +60,28 @@ export default defineComponent({
         return map;
       }, {});
     },
+    imageSetsSorted() {
+      const sortedSets = this.imageSets.map(set => ({...set, images: sort(set.images, this.sortBy(m => m.name))}));
+      const sortedSetList = sort(sortedSets, this.sortBy(m => m.name));
+      return [{name: "User", images: this.imagesSorted}].concat(sortedSets);
+    },
     imagesSorted() {
-      return sort(this.images, (a, b) => {
-        const aKey = a.name.toLowerCase();
-        const bKey = b.name.toLowerCase();
+      return sort(this.images, this.sortBy(m => m.name));
+    },
+  },
+  async created() {
+    axios.get("/api/images").then(response => this.images = response.data);
+    axios.get("/api/image_sets").then(response => this.imageSets = response.data);
+  },
+  mounted() {
+    this.$refs.modal.addEventListener("show.bs.modal", this.shown);
+    this.$refs.modal.addEventListener("hidden.bs.modal", this.hidden);
+  },
+  methods: {
+    sortBy(func) {
+      return (a, b) => {
+        const aKey = func(a).toLowerCase();
+        const bKey = func(b).toLowerCase();
         if (aKey < bKey) {
           return -1;
         } else if (aKey > bKey) {
@@ -55,13 +89,8 @@ export default defineComponent({
         } else {
           return 0;
         }
-      });
+      };
     },
-  },
-  async created() {
-    axios.get("/api/images").then(response => this.images = response.data);
-  },
-  methods: {
     icon_clicked(event) {
       const imageId = event.target.dataset.imageId;
       const image = this.imageMap[imageId];
@@ -102,6 +131,9 @@ export default defineComponent({
       this.$emit("imageSelected", {id: response.data.id, url: response.data.url});
       this.modal.hide();
     },
+    shown() {
+      document.querySelector("button[data-toggle-name='User']").click();
+    },
     hidden() {
       this.$emit("pickerClosed");
     },
@@ -118,7 +150,7 @@ export default defineComponent({
   pointer-events: all;
 }
 
-.image-picker .modal-body {
+.image-picker .image-list {
   display: flex;
   flex-wrap: wrap;
 }
@@ -127,6 +159,7 @@ export default defineComponent({
   width: 7rem;
   margin: 0.2rem;
   cursor: pointer;
+  background-color: #ddd;
 }
 
 .image-card:hover {

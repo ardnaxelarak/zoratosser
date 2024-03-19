@@ -12,6 +12,10 @@ exports.giveItem = async function(channelId, setId, userId) {
   const channel = await models.user.findOne({where: {twitch_id: channelId}});
   const [user, _unused1] = await models.user.findOrCreate({where: {twitch_id: userId}, include: "obtained_items"});
 
+  if (!user.obtained_items) {
+    user.obtained_items = [];
+  }
+
   const itemMap = user.obtained_items.reduce((map, item) => {
     map[item.id] = item;
     return map;
