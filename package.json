@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "vite build",
-    "watch": "vite build --watch --mode=dev",
+    "watch": "NODE_ENV=development vite build --watch --mode=dev",
     "start": "node main.js"
   },
   "author": "",
@@ -32,6 +32,7 @@
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5",
     "vue": "^3.4.21",
+    "vue-markdown-render": "^2.1.1",
     "vue-router": "^4.3.0"
   },
   "devDependencies": {

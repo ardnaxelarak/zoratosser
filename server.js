@@ -8,6 +8,7 @@ const history = require("connect-history-api-fallback");
 const http = require("http");
 const op = require("sequelize").Op;
 const passport = require("passport");
+const querystring = require('node:querystring');
 const { Server } = require("socket.io");
 const twitchStrategy = require("passport-twitch-new").Strategy;
 
@@ -44,17 +45,17 @@ app.use(cookieSession({secret: process.env.COOKIE_SECRET}));
 
 // register regenerate & save after the cookieSession middleware initialization
 app.use(function(request, response, next) {
-    if (request.session && !request.session.regenerate) {
-        request.session.regenerate = (cb) => {
-            cb();
-        };
-    }
-    if (request.session && !request.session.save) {
-        request.session.save = (cb) => {
-            cb();
-        };
-    }
-    next();
+  if (request.session && !request.session.regenerate) {
+    request.session.regenerate = (cb) => {
+      cb();
+    };
+  }
+  if (request.session && !request.session.save) {
+    request.session.save = (cb) => {
+      cb();
+    };
+  }
+  next();
 });
 
 app.use(passport.initialize());
@@ -63,6 +64,7 @@ passport.use(new twitchStrategy({
     clientID: process.env.TWITCH_CLIENT_ID,
     clientSecret: process.env.TWITCH_CLIENT_SECRET,
     callbackURL: process.env.HOSTNAME + "/twitch_callback",
+    store: true,
     scope: userScopes,
   },
   async function(accessToken, refreshToken, profile, done) {
@@ -85,17 +87,27 @@ passport.deserializeUser((user, done) => {
 
 app.use("/api", api);
 
-app.get("/authenticate", passport.authenticate("twitch"));
-app.get("/twitch_callback", passport.authenticate("twitch", { failureRedirect: "/" }), (req, res) => {
-  res.redirect("/");
-});
+function authMiddleware(req, res, next) {
+  const options = {
+    failureRedirect: "/authfailure",
+    state: {
+      host: req.query.host,
+      redirect: req.query.redirect,
+    },
+  };
+  if (req.query.host) {
+    options.scope = channelScopes;
+  }
+  passport.authenticate("twitch", options)(req, res, next);
+};
 
-app.get("/authenticate_host", passport.authenticate("twitch", {
-  scope: channelScopes,
-  callbackURL: process.env.HOSTNAME + "/twitch_host_callback",
-}));
-app.get("/twitch_host_callback", passport.authenticate("twitch", { failureRedirect: "/" }), (req, res) => {
-  res.redirect("/onboard");
+app.get("/authenticate", authMiddleware);
+app.get("/twitch_callback", authMiddleware, (req, res) => {
+  const state = req.authInfo.state;
+  if (state.host) {
+    return res.redirect(`/onboard?redirect=${state.redirect || "/"}`);
+  }
+  return res.redirect(state.redirect || "/");
 });
 
 app.get("/onboard", async (req, res) => {
@@ -132,7 +144,7 @@ app.get("/onboard", async (req, res) => {
     }
   }
 
-  res.redirect("/myzora/edit");
+  res.redirect(req.query.redirect || "/");
 });
 
 app.post("/redeem", async (req, res) => {
@@ -172,6 +184,27 @@ app.post("/redeem", async (req, res) => {
 
 const server = http.createServer(app);
 const io = new Server(server);
+
+const authViewer = function(req, res, next) {
+  if (!req.session.passport?.user) {
+    const query = querystring.stringify({redirect: req.path});
+    return res.redirect("/authenticate?" + query);
+  }
+
+  return next();
+};
+
+const authChannel = function(req, res, next) {
+  if (!req.session.passport?.user) {
+    const query = querystring.stringify({redirect: req.path, host: true});
+    return res.redirect("/authenticate?" + query);
+  }
+
+  return next();
+};
+
+app.get("/myitems/:channel", authViewer);
+app.get("/myzora/edit", authChannel);
 
 app.use(history());
 app.use(express.static("dist"));

@@ -15,7 +15,10 @@
         </nav>
         <div class="tab-content">
           <template v-for="imageSet in imageSetsSorted">
-            <div class="tab-pane fade" :data-set-name="imageSet.name">
+            <div class="tab-pane fade mt-4" :data-set-name="imageSet.name">
+              <div class="text-center" v-if="imageSet.description">
+                <vue-markdown :source="imageSet.description" :options="{linkify: true}" />
+              </div>
               <div class="image-list">
                 <template v-for="image in imageSet.images">
                   <div class="card image-card" :data-image-id="image.id" @click="icon_clicked">
@@ -41,9 +44,13 @@ import { defineComponent } from "vue";
 import axios from "axios";
 import sort from "immutable-sort";
 import { Modal } from "bootstrap";
+import VueMarkdown from 'vue-markdown-render'
 
 export default defineComponent({
   props: ['id'],
+  components: {
+    VueMarkdown,
+  },
   data() {
     return {
       images: [],
@@ -55,7 +62,8 @@ export default defineComponent({
       return Modal.getOrCreateInstance(`#${this.id}`);
     },
     imageMap() {
-      return this.images.reduce((map, obj) => {
+      const sets = this.images.concat(this.imageSets.map(m => m.images));
+      return sets.flatMap(m => m).reduce((map, obj) => {
         map[obj.id] = obj;
         return map;
       }, {});
