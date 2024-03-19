@@ -24,7 +24,7 @@
           <template v-if="item.editing">
             <tr>
               <td rowspan="2" class="text-center">
-                <img class="item-icon editable-icon" :src="item.edit.image_url" :data-item="item.id" @click="pick_image">
+                <ImageIcon class="item-icon editable-icon" :image="item.edit.image" :data-item="item.id" @click="pick_image" />
               </td>
               <td rowspan="2" class="item-name">
                 <input type="text" class="form-control form-control-sm" v-model="item.edit.name" />
@@ -55,7 +55,9 @@
           </template>
           <template v-else>
             <tr>
-              <td rowspan="2" class="text-center"><img class="item-icon" :src="item.image_url"></td>
+              <td rowspan="2" class="text-center">
+                <ImageIcon class="item-icon" :image="item.image" />
+              </td>
               <td rowspan="2" class="item-name">{{ item.name }}</td>
               <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="item.weigh_by_remainder" disabled></td>
               <td class="text-end">Weight:</td>
@@ -78,8 +80,8 @@
         </template>
         <template v-if="newItem">
           <tr>
-            <template v-if="newItem.image_url">
-              <td rowspan="2" class="text-center editable-icon"><img class="item-icon" :src="newItem.image_url" @click="pick_new_image"></td>
+            <template v-if="newItem.image.url">
+              <td rowspan="2" class="text-center editable-icon"><img class="item-icon" :src="newItem.image.url" @click="pick_new_image"></td>
             </template>
             <template v-else>
               <td rowspan="2" class="text-center editable-icon"><img class="item-icon" src="/unknown.png" @click="pick_new_image"></td>
@@ -130,10 +132,12 @@ import axios from "axios";
 import { Modal } from "bootstrap";
 import sort from "immutable-sort";
 
+import ImageIcon from '../components/ImageIcon.vue'
 import ImagePicker from '../components/ImagePicker.vue'
 
 export default defineComponent({
   components: {
+    ImageIcon,
     ImagePicker,
   },
   data() {
@@ -213,8 +217,8 @@ export default defineComponent({
         return;
       }
 
-      this.imagePickerItem.image_id = data.id;
-      this.imagePickerItem.image_url = data.url;
+      this.imagePickerItem.image.id = data.id;
+      this.imagePickerItem.image.url = data.url;
     },
     pick_image(event) {
       const item = this.itemMap[event.target.dataset.item];
@@ -233,7 +237,7 @@ export default defineComponent({
       }
 
       const requestItem = {
-        image_id: item.edit.image_id,
+        image_id: item.edit.image.id,
         name: item.edit.name,
         single_id: item.edit.single_id,
         single_quantity: item.edit.single_quantity,
@@ -282,7 +286,7 @@ export default defineComponent({
         return;
       }
 
-      if (!this.newItem.image_id) {
+      if (!this.newItem.image.id) {
         this.newItem.error = "image is required";
         return;
       }
@@ -335,10 +339,6 @@ export default defineComponent({
 .item-icon {
   width: 3rem;
   height: 3rem;
-  object-fit: contain;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
 }
 
 .item-name {

@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
       return {
         id: this.id,
         name: this.name,
-        generic: this.channel_twitch_id == null,
+        pixelated: this.pixelated,
         url: this.url,
       };
     }
@@ -22,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     url: DataTypes.STRING,
     image_set_id: DataTypes.INTEGER,
+    pixelated: DataTypes.BOOLEAN,
   }, {
     sequelize,
     modelName: "image",

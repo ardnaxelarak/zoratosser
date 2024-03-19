@@ -22,7 +22,7 @@
               <div class="image-list">
                 <template v-for="image in imageSet.images">
                   <div class="card image-card" :data-image-id="image.id" @click="icon_clicked">
-                    <img class="card-img-top image-icon" :src="image.url">
+                    <ImageIcon class="card-img-top picker-image-icon" :image="image" />
                     <div class="card-footer text-body-secondary image-name text-center">{{ image.name }}</div>
                   </div>
                 </template>
@@ -46,9 +46,12 @@ import sort from "immutable-sort";
 import { Modal } from "bootstrap";
 import VueMarkdown from 'vue-markdown-render'
 
+import ImageIcon from '../components/ImageIcon.vue'
+
 export default defineComponent({
   props: ['id'],
   components: {
+    ImageIcon,
     VueMarkdown,
   },
   data() {
@@ -174,14 +177,10 @@ export default defineComponent({
   filter: brightness(75%);
 }
 
-.image-icon {
+.picker-image-icon {
   pointer-events: none;
   width: 6rem;
   height: 6rem;
-  object-fit: contain;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
   margin: 0.2rem auto;
 }
 

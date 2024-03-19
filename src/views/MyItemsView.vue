@@ -5,7 +5,9 @@
         <template v-for="item in itemsSorted">
           <tr>
             <td class="text-end obtained-items-quantity-col">{{ item.quantity }}</td>
-            <td class="text-center"><img class="item-icon" :src="item.image_url"></td>
+            <td class="text-center">
+              <ImageIcon class="item-icon" :image="item.image" />
+            </td>
             <td class="obtained-items-name-col">{{ item.name }}</td>
           </tr>
         </template>
@@ -19,7 +21,12 @@ import { defineComponent } from "vue";
 import axios from "axios";
 import sort from "immutable-sort";
 
+import ImageIcon from '../components/ImageIcon.vue'
+
 export default defineComponent({
+  components: {
+    ImageIcon,
+  },
   data() {
     return {
       items: [],
@@ -61,10 +68,6 @@ export default defineComponent({
 .item-icon {
   width: 3rem;
   height: 3rem;
-  object-fit: contain;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
 }
 
 .obtained-items-quantity-col, .obtained-items-name-col {
