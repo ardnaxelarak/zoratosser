@@ -4,15 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "vite build",
-    "watch": "NODE_ENV=development vite build --watch --mode=dev",
-    "start": "node main.js"
+    "build-dev": "vite build --outDir dist_dev",
+    "build-prod": "vite build --outDir dist_prod",
+    "watch": "NODE_ENV=development vite build --watch --mode=dev --outDir dist_dev",
+    "dev": "node main.js",
+    "prod": "dotenvx run --env-file=.env.prod -- node main.js",
+    "migrate-dev": "sequelize db:migrate",
+    "migrate-prod": "dotenvx run --env-file=.env.prod -- sequelize db:migrate"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.529.1",
-    "@dotenvx/dotenvx": "^0.14.0",
+    "@dotenvx/dotenvx": "^0.20.1",
     "axios": "^1.6.7",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",

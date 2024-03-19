@@ -1,6 +1,6 @@
 <template>
   <ImagePicker id="imagePickerModal" @image-selected="image_selected" @picker-closed="picker_closed" />
-  <div class="card sets-card ms-4 mt-4 me-4">
+  <div class="card sets-card m-4">
     <div class="card-body">
       <h5 class="card-title">Sets</h5>
       <div class="vstack mx-auto">
@@ -8,7 +8,7 @@
       </div>
     </div>
   </div>
-  <div class="card items-card ms-4 mt-4 me-4">
+  <div class="card items-card m-4">
     <div class="card-body">
       <h5 class="card-title">Items</h5>
       <table class="table weight-table mb-0">

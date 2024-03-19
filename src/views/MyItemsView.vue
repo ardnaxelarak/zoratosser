@@ -4,9 +4,9 @@
       <table class="table item-table mb-0">
         <template v-for="item in itemsSorted">
           <tr>
-            <td class="text-end quantity-col">{{ item.quantity }}</td>
+            <td class="text-end obtained-items-quantity-col">{{ item.quantity }}</td>
             <td class="text-center"><img class="item-icon" :src="item.image_url"></td>
-            <td class="name-col">{{ item.name }}</td>
+            <td class="obtained-items-name-col">{{ item.name }}</td>
           </tr>
         </template>
       </table>
@@ -67,7 +67,7 @@ export default defineComponent({
   image-rendering: pixelated;
 }
 
-.quantity-col, .name-col {
+.obtained-items-quantity-col, .obtained-items-name-col {
   font-size: 2rem;
 }
 </style>
