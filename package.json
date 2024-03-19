@@ -4,13 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build-dev": "vite build --outDir dist_dev",
-    "build-prod": "vite build --outDir dist_prod",
-    "watch": "NODE_ENV=development vite build --watch --mode=dev --outDir dist_dev",
-    "dev": "node main.js",
-    "prod": "dotenvx run --env-file=.env.prod -- node main.js",
-    "migrate-dev": "sequelize db:migrate",
-    "migrate-prod": "dotenvx run --env-file=.env.prod -- sequelize db:migrate"
+    "build": "vite build",
+    "watch": "NODE_ENV=development vite build --watch --mode=dev",
+    "start": "node main.js",
+    "migrate": "sequelize db:migrate"
   },
   "author": "",
   "license": "ISC",

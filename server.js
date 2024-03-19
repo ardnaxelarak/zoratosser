@@ -207,7 +207,7 @@ app.get("/myitems/:channel", authViewer);
 app.get("/myzora/edit", authChannel);
 
 app.use(history());
-app.use(express.static(process.env.DIST_DIR));
+app.use(express.static("dist"));
 
 const clients = [];
 
