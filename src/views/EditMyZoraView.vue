@@ -271,7 +271,7 @@ export default defineComponent({
       item.editing = false;
     },
     create_item() {
-      this.newItem = {weigh_by_remainder: true, sets: {}, image: {}};
+      this.newItem = {weigh_by_remainder: false, sets: {}, image: {}};
       for (const set of this.sets) {
         this.newItem.sets[set.id] = { weight: 0, max_quantity: 0 };
       }
