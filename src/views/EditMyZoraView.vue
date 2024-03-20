@@ -271,7 +271,7 @@ export default defineComponent({
       item.editing = false;
     },
     create_item() {
-      this.newItem = {weigh_by_remainder: true, sets: {}};
+      this.newItem = {weigh_by_remainder: true, sets: {}, image: {}};
       for (const set of this.sets) {
         this.newItem.sets[set.id] = { weight: 0, max_quantity: 0 };
       }
@@ -290,6 +290,8 @@ export default defineComponent({
         this.newItem.error = "image is required";
         return;
       }
+
+      this.newItem.image_id = this.newItem.image.id;
 
       try {
         const response = await axios.post("/api/items", this.newItem);
