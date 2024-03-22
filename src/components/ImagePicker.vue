@@ -21,10 +21,7 @@
               </div>
               <div class="image-list">
                 <template v-for="image in imageSet.images">
-                  <div class="card image-card" :data-image-id="image.id" @click="icon_clicked">
-                    <ImageIcon class="card-img-top picker-image-icon" :image="image" />
-                    <div class="card-footer text-body-secondary image-name text-center">{{ image.name }}</div>
-                  </div>
+                  <ImagePickerCard :image="image" @icon-click="icon_clicked" @delete="delete_clicked" />
                 </template>
               </div>
             </div>
@@ -46,12 +43,12 @@ import sort from "immutable-sort";
 import { Modal } from "bootstrap";
 import VueMarkdown from 'vue-markdown-render'
 
-import ImageIcon from '../components/ImageIcon.vue'
+import ImagePickerCard from '../components/ImagePickerCard.vue'
 
 export default defineComponent({
   props: ['id'],
   components: {
-    ImageIcon,
+    ImagePickerCard,
     VueMarkdown,
   },
   data() {
@@ -85,7 +82,7 @@ export default defineComponent({
     axios.get("/api/image_sets").then(response => this.imageSets = response.data);
   },
   mounted() {
-    this.$refs.modal.addEventListener("show.bs.modal", this.shown);
+    this.$refs.modal.addEventListener("show.bs.modal", this.show);
     this.$refs.modal.addEventListener("hidden.bs.modal", this.hidden);
   },
   methods: {
@@ -102,11 +99,25 @@ export default defineComponent({
         }
       };
     },
-    icon_clicked(event) {
-      const imageId = event.target.dataset.imageId;
-      const image = this.imageMap[imageId];
-      this.$emit("imageSelected", {id: image.id, url: image.url});
+    icon_clicked(data) {
+      this.$emit("imageSelected", {id: data.image.id, url: data.image.url});
       this.modal.hide();
+    },
+    async delete_clicked(data) {
+      if (!data.id) {
+        return;
+      }
+
+      try {
+        await axios.delete(`/api/images/${data.id}`);
+
+        const index = this.images.findIndex(im => im.id == data.id);
+        if (index >= 0) {
+          this.images.splice(index, 1);
+        }
+      } catch (err) {
+        console.log(err);
+      }
     },
     async upload_clicked(event) {
       const pickerOpts = {
@@ -136,13 +147,13 @@ export default defineComponent({
         },
       });
 
-      console.log(response);
-
       this.images.push(response.data);
       this.$emit("imageSelected", {id: response.data.id, url: response.data.url});
       this.modal.hide();
     },
-    shown() {
+    show() {
+      axios.get("/api/images").then(response => this.images = response.data);
+      axios.get("/api/image_sets").then(response => this.imageSets = response.data);
       document.querySelector("button[data-toggle-name='User']").click();
     },
     hidden() {
@@ -164,29 +175,5 @@ export default defineComponent({
 .image-picker .image-list {
   display: flex;
   flex-wrap: wrap;
-}
-
-.image-card {
-  width: 7rem;
-  margin: 0.2rem;
-  cursor: pointer;
-  background-color: #ddd;
-}
-
-.image-card:hover {
-  filter: brightness(75%);
-}
-
-.picker-image-icon {
-  pointer-events: none;
-  width: 6rem;
-  height: 6rem;
-  margin: 0.2rem auto;
-}
-
-.image-name {
-  pointer-events: none;
-  font-size: small;
-  padding: 0.3rem;
 }
 </style>

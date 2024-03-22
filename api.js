@@ -44,7 +44,7 @@ router.route("/images")
   .get(async (req, res) => {
     const user = req.session.passport.user;
 
-    const imageList = await models.image.findAll({where: {channel_twitch_id: user.twitch_id}});
+    const imageList = await models.image.findAll({where: {channel_twitch_id: user.twitch_id}, include: "items"});
 
     res.send(imageList.map(m => m.sanitize()));
   })
@@ -74,6 +74,25 @@ router.route("/images")
     const image = await models.image.create({channel_twitch_id: channelId, name: req.body.name, url: url});
 
     res.send(image.sanitize());
+  })
+
+router.route("/images/:id")
+  .delete(async (req, res) => {
+    const user = req.session.passport.user;
+
+    const image = await models.image.findOne({where: {id: req.params.id, channel_twitch_id: user.twitch_id}, include: "items"});
+
+    if (!image) {
+      return res.sendStatus(404);
+    }
+
+    if (image.items.length > 0) {
+      return res.sendStatus(409);
+    }
+
+    await image.destroy();
+
+    res.sendStatus(204);
   })
 
 router.route("/sets")
