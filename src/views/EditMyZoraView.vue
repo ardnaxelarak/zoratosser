@@ -15,7 +15,11 @@
         <tr>
           <th scope="col" class="icon-col text-center align-bottom">Icon</th>
           <th scope="col" class="name-col align-bottom">Name</th>
-          <th scope="col" class="wbr-col text-center align-bottom">Weigh by<br>Remainder</th>
+          <th scope="col" class="wbr-col text-center align-bottom">
+            <TooltipWrapper :title="wbrTooltip">
+              Weigh by<br>Remainder
+            </TooltipWrapper>
+          </th>
           <th scope="col" class="text-end align-bottom">Set:</th>
           <th scope="col" class="weight-col text-center align-bottom" v-for="set in sets">{{ set.name }}</th>
           <th scope="col"></th>
@@ -30,7 +34,11 @@
                 <input type="text" class="form-control form-control-sm" v-model="item.edit.name" />
               </td>
               <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="item.edit.weigh_by_remainder"></td>
-              <td class="text-end">Weight:</td>
+              <td class="text-end">
+                <TooltipWrapper :title="weightTooltip">
+                  Weight
+                </TooltipWrapper>
+              </td>
               <td class="text-center align-bottom" v-for="set in sets">
                 <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" v-model="item.edit.sets[set.id].weight" />
               </td>
@@ -44,7 +52,11 @@
               </td>
             </tr>
             <tr>
-              <td class="text-end no-top-border">Max:</td>
+              <td class="text-end no-top-border">
+                <TooltipWrapper :title="maxTooltip">
+                  Max:
+                </TooltipWrapper>
+              </td>
               <td class="text-center align-bottom no-top-border" v-for="set in sets">
                 <input type="number" class="max-input form-control form-control-sm" min="0" v-model="item.edit.sets[set.id].max_quantity" />
               </td>
@@ -60,7 +72,11 @@
               </td>
               <td rowspan="2" class="item-name">{{ item.name }}</td>
               <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="item.weigh_by_remainder" disabled></td>
-              <td class="text-end">Weight:</td>
+              <td class="text-end">
+                <TooltipWrapper :title="weightTooltip">
+                  Weight:
+                </TooltipWrapper>
+              </td>
               <td class="text-center align-bottom" v-for="set in sets">
                 {{ item.sets[set.id]?.weight || 0 }}
               </td>
@@ -71,7 +87,11 @@
               </td>
             </tr>
             <tr>
-              <td class="text-end no-top-border">Max:</td>
+              <td class="text-end no-top-border">
+                <TooltipWrapper :title="maxTooltip">
+                  Max:
+                </TooltipWrapper>
+              </td>
               <td class="text-center align-bottom no-top-border" v-for="set in sets">
                 {{ item.sets[set.id]?.max_quantity || 0 }}
               </td>
@@ -90,8 +110,12 @@
               <input type="text" class="form-control form-control-sm" v-model="newItem.name" />
             </td>
             <td rowspan="2" class="text-center"><input class="form-check-input" type="checkbox" v-model="newItem.weigh_by_remainder"></td>
-            <td class="text-end no-bottom-border">Weight:</td>
-            <td class="text-center align-bottom no-bottom-border" v-for="set in sets">
+            <td class="text-end">
+              <TooltipWrapper :title="weightTooltip">
+                Weight:
+              </TooltipWrapper>
+            </td>
+            <td class="text-center align-bottom" v-for="set in sets">
               <input type="number" class="weight-input form-control form-control-sm" min="0" step="any" v-model="newItem.sets[set.id].weight" />
             </td>
             <td rowspan="2" class="row-management">
@@ -104,7 +128,11 @@
             </td>
           </tr>
           <tr>
-            <td class="text-end no-top-border">Max:</td>
+            <td class="text-end no-top-border">
+              <TooltipWrapper :title="maxTooltip">
+                Max:
+              </TooltipWrapper>
+            </td>
             <td class="text-center align-bottom no-top-border" v-for="set in sets">
               <input type="number" class="max-input form-control form-control-sm" min="0" v-model="newItem.sets[set.id].max_quantity" />
             </td>
@@ -134,11 +162,13 @@ import sort from "immutable-sort";
 
 import ImageIcon from '../components/ImageIcon.vue'
 import ImagePicker from '../components/ImagePicker.vue'
+import TooltipWrapper from '../components/TooltipWrapper.vue'
 
 export default defineComponent({
   components: {
     ImageIcon,
     ImagePicker,
+    TooltipWrapper,
   },
   data() {
     return {
@@ -146,6 +176,9 @@ export default defineComponent({
       items: [],
       newItem: null,
       imagePickerItem: null,
+      wbrTooltip: "When selected, the actual weight of the item appearing is multiplied by the remaining number of that item the user has before reaching the maximum. Thus, a user with fewer of the item will be more likely to receive the item than one with more of the item. This has no effect if there is no maximum.",
+      weightTooltip: "This is the relative probability of this item being selected out of the sum of all the item weights. Items which a user has already obtained the maximum of will not be included in this total.",
+      maxTooltip: "The maximum number of this item that a single user can receive. If set to 0, there is no maximum.",
     };
   },
   computed: {
@@ -326,7 +359,7 @@ export default defineComponent({
   width: fit-content;
 }
 
-.weight-table td, .weight-table th {
+.weight-table td, .weight-table th, .weight-table div {
   padding: 0 0.5rem;
 }
 

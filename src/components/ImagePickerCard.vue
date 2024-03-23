@@ -2,11 +2,11 @@
   <div class="card image-card" :data-image-id="image.id" @click="icon_clicked">
     <ImageIcon class="card-img-top picker-image-icon" :image="image" />
     <div class="card-body no-pointer-events p-0 pb-1" v-if="image.in_use != undefined">
-      <div ref="tooltip" class="delete-button-container" data-bs-toggle="tooltip" data-bs-placement="bottom" :data-bs-title="tooltipText">
+      <TooltipWrapper class="delete-button-container" placement="bottom" :title="tooltipText" :enabled="image.in_use">
         <button type="button" class="btn btn-outline-danger delete-image-button" :disabled="image.in_use" @click="delete_clicked">
           <i class="bi bi-trash3-fill"></i>
         </button>
-      </div>
+      </TooltipWrapper>
     </div>
     <div class="card-footer text-body-secondary image-name no-pointer-events text-center">{{ image.name }}</div>
   </div>
@@ -17,26 +17,13 @@ import { defineComponent } from "vue";
 import { Tooltip } from "bootstrap";
 
 import ImageIcon from '../components/ImageIcon.vue'
+import TooltipWrapper from '../components/TooltipWrapper.vue'
 
 export default defineComponent({
   props: ['image'],
   components: {
     ImageIcon,
-  },
-  watch: {
-    image(oldImage, newImage) {
-      if (!this.$refs.tooltip) {
-        return;
-      }
-
-      const tooltip = Tooltip.getOrCreateInstance(this.$refs.tooltip);
-
-      if (newImage.in_use) {
-        tooltip.enable();
-      } else {
-        tooltip.disable();
-      }
-    },
+    TooltipWrapper,
   },
   computed: {
     tooltipText() {
