@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import EditMyZoraView from '../views/EditMyZoraView.vue'
-import ZoraOverlayView from '../views/ZoraOverlayView.vue'
-import MyItemsView from '../views/MyItemsView.vue'
+
+const HomeView = () => import("../views/HomeView.vue");
+const EditMyZoraView = () => import("../views/EditMyZoraView.vue");
+const ZoraOverlayView = () => import("../views/ZoraOverlayView.vue");
+const MyItemsView = () => import("../views/MyItemsView.vue");
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
