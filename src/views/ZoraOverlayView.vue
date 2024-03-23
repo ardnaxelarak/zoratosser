@@ -19,7 +19,7 @@
 
 <script>
 import { defineComponent } from "vue";
-import { io } from "socket.io-client";
+import ReconnectingWebSocket from "reconnecting-websocket";
 import $ from "jquery";
 
 export default defineComponent({
@@ -31,22 +31,13 @@ export default defineComponent({
     };
   },
   async created() {
-    this.socket = io();
+    const url = `wss://${window.location.hostname}/events/${this.$route.params.username}`;
 
-    this.socket.on("connect_error", (err) => {
-      console.log(err);
-    });
+    this.socket = new ReconnectingWebSocket(url);
 
-    this.socket.on("connect", () => {
-      console.log(`connected: ${this.socket.id}`);
-      this.socket.send("register", this.$route.params.username);
-    });
-
-    this.socket.on("disconnect", (reason) => {
-      console.log(`disconnected: ${reason}`);
-    });
-
-    this.socket.on("message", this.onMessage);
+    this.socket.addEventListener("message", this.onMessage);
+    this.socket.addEventListener("open", () => console.log("Connected to WebSocket"));
+    this.socket.addEventListener("close", (event) => console.log(`Disconnected from WebSocket: {code: ${event.code}, reason: ${event.reason}}`));
   },
   mounted() {
     $('.zoraItem').hide();
@@ -54,9 +45,12 @@ export default defineComponent({
     $('.zoraVideo').on('ended', this.zoraEnded);
   },
   methods: {
-    onMessage(...args) {
-      if (args.length >= 2 && args[0] === "zora") {
-        this.enqueueZora(args[1]);
+    onMessage(event) {
+      try {
+        const json = JSON.parse(event.data);
+        this.enqueueZora(json);
+      } catch (err) {
+        console.log(err);
       }
     },
     enqueueZora(data) {

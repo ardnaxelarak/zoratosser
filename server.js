@@ -4,12 +4,12 @@ const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
 const crypto = require("crypto");
 const express = require("express");
+const express_ws = require("express-ws");
 const history = require("connect-history-api-fallback");
 const http = require("http");
 const op = require("sequelize").Op;
 const passport = require("passport");
 const querystring = require('node:querystring');
-const { Server } = require("socket.io");
 const twitchStrategy = require("passport-twitch-new").Strategy;
 
 const api = require("./api.js");
@@ -22,6 +22,8 @@ const util = require("./util.js");
 
 const app = express();
 const port = process.env.PORT || 3444;
+
+express_ws(app);
 
 const notifications = new Map();
 
@@ -182,8 +184,28 @@ app.post("/redeem", async (req, res) => {
   res.sendStatus(200);
 });
 
-const server = http.createServer(app);
-const io = new Server(server);
+const wsClients = {};
+app.ws("/events/:channel", async function(ws, req) {
+  const channel = await models.user.findOne({where: {twitch_lower_name: req.params.channel.toLowerCase()}});
+  if (!channel) {
+    return;
+  }
+
+  const twitchId = channel.twitch_id;
+
+  if (!wsClients[twitchId]) {
+    wsClients[twitchId] = [];
+  }
+
+  wsClients[twitchId].push(ws);
+
+  ws.on("close", (code, reason) => {
+    const index = wsClients[twitchId].indexOf(ws);
+    if (index >= 0) {
+      wsClients[twitchId].splice(index, 1);
+    }
+  });
+});
 
 const authViewer = function(req, res, next) {
   if (!req.session.passport?.user) {
@@ -209,39 +231,13 @@ app.get("/myzora/edit", authChannel);
 app.use(history());
 app.use(express.static("dist"));
 
-const clients = [];
-
-io.on("connection", client => {
-  clients.push({client: client});
-
-  client.on('disconnect', function (reason) {
-    const index = clients.findIndex(el => el.client === client);
-    if (index >= 0) {
-      clients.splice(index, 1);
-    }
-  });
-
-  client.on('message', async function(...args) {
-    if (args.length >= 2 && args[0] === "register") {
-      const found = clients.find(el => el.client === client);
-      const channelName = args[1].toLowerCase();
-      const channel = await models.user.findOne({where: {twitch_lower_name: channelName}});
-      if (found && channel) {
-        found.channel = channel.twitch_id;
-      }
-    }
-  });
-});
-
 function zoraItem(channel, data) {
-  for (const client of clients) {
-    if (client.channel == channel) {
-      client.client.send("zora", data);
-    }
+  for (const client of wsClients[channel]) {
+    client.send(JSON.stringify(data));
   }
 };
 
-server.listen(port, () => {
+app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
