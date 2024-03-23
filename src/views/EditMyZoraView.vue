@@ -388,7 +388,7 @@ export default defineComponent({
   width: fit-content;
 }
 
-.weight-table td, .weight-table th, .weight-table div {
+.weight-table td, .weight-table th {
   padding: 0 0.5rem;
 }
 

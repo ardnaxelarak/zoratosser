@@ -1,5 +1,5 @@
 <template>
-  <div ref="tooltip" :data-bs-placement="placement" :data-bs-title="title">
+  <div class="wrapper" ref="tooltip" :data-bs-placement="placement" :data-bs-title="title">
     <slot></slot>
   </div>
 </template>
@@ -47,3 +47,10 @@ export default defineComponent({
   }
 });
 </script>
+
+<style>
+.wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+</style>
