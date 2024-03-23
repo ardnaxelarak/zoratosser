@@ -1,21 +1,23 @@
 <template>
   <ImagePicker id="imagePickerModal" @image-selected="image_selected" @picker-closed="picker_closed" />
+  <CopyLine class="info-line" label="Overlay:" :value="info.overlay"></CopyLine>
+  <CopyLine class="info-line" label="View Items:" :value="info.items"></CopyLine>
   <div class="card sets-card m-4">
     <div class="card-body">
-      <h5 class="card-title">Sets</h5>
+      <h5 class="card-title">Sets -- Coming Soon!</h5>
       <div class="vstack mx-auto">
         <button type="button" class="btn btn-primary" v-for="set in sets">{{ set.name }}</button>
       </div>
     </div>
   </div>
-  <div class="card items-card m-4">
+  <div class="card fit-content m-4">
     <div class="card-body">
       <h5 class="card-title">Items</h5>
       <table class="table weight-table mb-0">
         <tr>
-          <th scope="col" class="icon-col text-center align-bottom">Icon</th>
+          <th scope="col" class="fit-content text-center align-bottom">Icon</th>
           <th scope="col" class="name-col align-bottom">Name</th>
-          <th scope="col" class="wbr-col text-center align-bottom">
+          <th scope="col" class="fit-content text-center align-bottom">
             <TooltipWrapper :title="wbrTooltip">
               Weigh by<br>Remainder
             </TooltipWrapper>
@@ -162,19 +164,23 @@ import { defineComponent } from "vue";
 import axios from "axios";
 import { Modal } from "bootstrap";
 import sort from "immutable-sort";
+import { Popover } from "bootstrap";
 
+import CopyLine from '../components/CopyLine.vue'
 import ImageIcon from '../components/ImageIcon.vue'
 import ImagePicker from '../components/ImagePicker.vue'
 import TooltipWrapper from '../components/TooltipWrapper.vue'
 
 export default defineComponent({
   components: {
+    CopyLine,
     ImageIcon,
     ImagePicker,
     TooltipWrapper,
   },
   data() {
     return {
+      info: {},
       sets: [],
       items: [],
       newItem: null,
@@ -211,6 +217,7 @@ export default defineComponent({
   async created() {
     axios.get("/api/sets").then(response => this.sets = response.data);
     axios.get("/api/items").then(response => this.items = response.data);
+    axios.get("/api/info").then(response => this.info = response.data);
   },
   methods: {
     parseError(response, item) {
@@ -375,12 +382,12 @@ export default defineComponent({
 </script>
 
 <style>
-.sets-card {
-  min-width: 30rem;
-  width: fit-content;
+.info-line {
+  width: 45rem;
 }
 
-.items-card {
+.sets-card {
+  min-width: 30rem;
   width: fit-content;
 }
 
@@ -407,14 +414,6 @@ export default defineComponent({
 
 .item-name {
   font-size: 2rem;
-}
-
-.icon-col {
-  width: fit-content;
-}
-
-.wbr-col {
-  width: fit-content;
 }
 
 .weight-input, .max-input {

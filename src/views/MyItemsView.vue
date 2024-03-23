@@ -1,5 +1,5 @@
 <template>
-  <div class="card items-card ms-4 mt-4 me-4">
+  <div class="card fit-content m-4">
     <div class="card-body">
       <table class="table item-table mb-0">
         <template v-for="item in itemsSorted">

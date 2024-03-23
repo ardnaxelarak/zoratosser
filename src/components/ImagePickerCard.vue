@@ -61,10 +61,6 @@ export default defineComponent({
   margin: 0.2rem auto;
 }
 
-.no-pointer-events {
-  pointer-events: none;
-}
-
 .image-name {
   font-size: small;
   padding: 0.3rem;

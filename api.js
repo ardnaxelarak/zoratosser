@@ -31,6 +31,16 @@ router.use((req, res, next) => {
   return next();
 });
 
+router.route("/info")
+  .get(async (req, res) => {
+    const user = req.session.passport.user;
+
+    return res.send({
+      overlay: `${process.env.HOSTNAME}/overlay/${user.twitch_display_name}`,
+      items: `${process.env.HOSTNAME}/myitems/${user.twitch_display_name}`,
+    });
+  });
+
 router.route("/image_sets")
   .get(async (req, res) => {
     const user = req.session.passport.user;

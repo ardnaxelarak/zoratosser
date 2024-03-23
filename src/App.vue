@@ -13,3 +13,12 @@ export default {
 }
 </script>
 
+<style>
+.no-pointer-events {
+  pointer-events: none;
+}
+
+.fit-content {
+  width: fit-content;
+}
+</style>
