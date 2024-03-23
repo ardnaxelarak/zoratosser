@@ -193,6 +193,46 @@ router.route("/items/:id")
 
     return await updateItemWeights(res, item, req.body.sets);
   })
+  .get(async (req, res) => {
+    const user = req.session.passport.user;
+
+    const item = await models.item.findOne({where: {id: req.params.id, channel_twitch_id: user.twitch_id}, include: ["user_items"]});
+
+    if (!item) {
+      return res.sendStatus(404);
+    }
+
+    return res.send(item.sanitize());
+  })
+  .delete(async (req, res) => {
+    const user = req.session.passport.user;
+
+    const item = await models.item.findOne({where: {id: req.params.id, channel_twitch_id: user.twitch_id}, include: ["weights", "user_items"]});
+
+    if (!item) {
+      return res.sendStatus(404);
+    }
+
+    const t = await models.sequelize.transaction();
+
+    try {
+      for (const weight of item.weights) {
+        await weight.destroy({tarnsaction: t});
+      }
+      for (const user_item of item.user_items) {
+        await user_item.destroy({tarnsaction: t});
+      }
+      await item.destroy({transaction: t});
+
+      await t.commit();
+
+      return res.sendStatus(204);
+    } catch (err) {
+      console.log(err);
+      await t.rollback();
+      return res.sendStatus(500);
+    }
+  })
 
 async function updateItemWeights(res, item, bodySets) {
   const channelId = item.channel_twitch_id;

@@ -84,6 +84,9 @@
                 <button type="button" class="btn btn-primary" :data-item="item.id" @click="edit_item">
                   <i class="bi bi-pencil-fill" :data-id="item.name"></i>
                 </button>
+                <button type="button" class="btn btn-danger ms-1" :data-item="item.id" @click="delete_item">
+                  <i class="bi bi-trash-fill"></i>
+                </button>
               </td>
             </tr>
             <tr>
@@ -225,6 +228,32 @@ export default defineComponent({
         default:
           item.error = response.data;
           return;
+      }
+    },
+    async delete_item(event) {
+      const id = event.target.dataset.item;
+
+      const response = await axios.get(`/api/items/${id}`);
+
+      if (response.data.user_count > 0) {
+        if (!confirm(`There are ${response.data.user_count} users who have this item.\nDeleting it will remove the item from those users.\nIf you just want to stop new users from getting this item, consider setting the weight to 0 instead.\nDelete anyway?`)) {
+          return;
+        }
+      } else {
+        if (!confirm("Are you sure you want to delete this item?")) {
+          return;
+        }
+      }
+
+      try {
+        await axios.delete(`/api/items/${id}`);
+
+        const index = this.items.findIndex(item => item.id == id);
+        if (index >= 0) {
+          this.items.splice(index, 1);
+        }
+      } catch (err) {
+        console.log(err);
       }
     },
     edit_item(event) {

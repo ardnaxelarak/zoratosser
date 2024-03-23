@@ -10,9 +10,10 @@ module.exports = (sequelize, DataTypes) => {
       RedeemItem.belongsTo(models.item, { as: "single_item", foreignKey: "single_id" });
       RedeemItem.belongsToMany(models.set, { as: "sets", through: models.item_weight, foreignKey: "item_id", otherKey: "set_id" });
       RedeemItem.hasMany(models.item_weight, { as: "weights", sourceKey: "id", foreignKey: "item_id" });
+      RedeemItem.hasMany(models.user_item, { as: "user_items", sourceKey: "id", foreignKey: "item_id" });
     }
     sanitize() {
-      return {
+      const results = {
         id: this.id,
         name: this.name,
         image: this.image,
@@ -20,8 +21,17 @@ module.exports = (sequelize, DataTypes) => {
         single_id: this.single_id,
         single_quantity: this.single_quantity,
         weigh_by_remainder: this.weigh_by_remainder,
-        sets: this.getSets(),
       };
+
+      if (this.sets) {
+        results.sets = this.getSets();
+      }
+
+      if (this.user_items) {
+        results.user_count = this.user_items.length;
+      }
+
+      return results;
     }
     getSets() {
       if (!this.sets) {
