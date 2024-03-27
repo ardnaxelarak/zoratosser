@@ -43,8 +43,14 @@ export default defineComponent({
     $('.zoraItem').hide();
     $('.zoraSection').hide();
     $('.zoraVideo').on('ended', this.zoraEnded);
+    setInterval(this.ping, 25000);
   },
   methods: {
+    ping() {
+      if (this.socket) {
+        this.socket.send(JSON.stringify({type: "ping"}));
+      }
+    },
     onMessage(event) {
       try {
         const json = JSON.parse(event.data);
